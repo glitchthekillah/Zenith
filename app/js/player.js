@@ -55,6 +55,7 @@ export async function play(item, { start, queue = [] } = {}) {
     else if (pre.sub.startsWith('lang:')) { const l = pre.sub.slice(5); const m = tr.subs.filter((x) => x.lang === l && !x.forced); S.sub = (m.find((x) => x.textBased) || m[0])?.index ?? S.sub; }
     else if (tr.subs.some((x) => String(x.index) === pre.sub)) S.sub = Number(pre.sub);
   }
+  if (jf.linuxStream() && S.sub != null && !tr.subs.find((x) => x.index === S.sub)?.textBased) S.sub = null;
   S.subTextOk = S.sub == null || !!tr.subs.find((x) => x.index === S.sub)?.textBased;
   S.forceTranscode = false;
   S.trackKnown = tr.audio.length + tr.subs.length > 0;
@@ -74,7 +75,7 @@ function build() {
   el.innerHTML = `<video playsinline preload="auto"></video>
   <div class="pl-subs"><div class="pl-subs-in"></div></div>
   <div class="pl-center"><div class="spinner"></div></div>
-  <button class="pl-resume" data-p="toggle" aria-label="Resume playback" title="Resume playback (Space)" hidden>${icon('play')}<span>Resume</span></button>
+  <button class="pl-resume" data-p="toggle" aria-label="Resume playback" title="Resume playback (Space)" hidden>${icon('play')}<span>Paused</span></button>
   <div class="pl-flash"></div>
   <div class="pl-ui">
     <div class="pl-top">
@@ -167,7 +168,14 @@ async function load(at = 0) {
   let pb;
   try {
     pb = await jf.playback(S.item.Id, { audioIndex: S.audio, subIndex: S.sub ?? undefined, burnSub: !desktop?.nativeVideo && S.sub != null && !S.subTextOk, clientAudio: canSwitchAudio || !!desktop?.nativeVideo, start: at, maxBitrate: S.quality, forceTranscode: S.forceTranscode });
-  } catch (e) { if (S === session && session.loadEpoch === epoch) return fail(e); return; }
+  } catch (e) {
+    if (S !== session || session.loadEpoch !== epoch) return;
+    // Picture subtitles (PGS) can't be shown without the server converting the video, which is off:
+    // play without them instead of stopping on an error the viewer can't get past
+    if (/image subtitles/i.test(e?.message || '') && S.sub != null) { S.sub = null; S.subTextOk = true; S.subOffNote = true; return load(at); }
+    return fail(e);
+  }
+  if (S.subOffNote) { S.subOffNote = false; setTimeout(() => S && flash('Subtitles off: this track is a picture format the app can\'t show'), 600); }
   if (S !== session || session.loadEpoch !== epoch) return;
   S.pb = pb;
   // The item didn't list its tracks: choose now from what the server sent
@@ -175,6 +183,8 @@ async function load(at = 0) {
     S.trackKnown = true;
     const a = pickAudio(pb.audio, pb.defaultAudio);
     S.sub = pickSub(pb.subtitles, pb.audio.find((x) => x.index === a));
+    // Linux streams can't carry picture subtitles (PGS/VOBSUB) without re-encoding: skip them
+    if (jf.linuxStream() && S.sub != null && !pb.subtitles.find((x) => x.index === S.sub)?.textBased) S.sub = null;
     S.subTextOk = S.sub == null || !!pb.subtitles.find((x) => x.index === S.sub)?.textBased;
     const was = S.audio; S.audio = a;
     if ((a !== (was ?? pb.defaultAudio) && (pb.hls || (!canSwitchAudio && !desktop?.nativeVideo))) || (!S.subTextOk && !desktop?.nativeVideo)) return load(at);

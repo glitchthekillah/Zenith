@@ -111,7 +111,7 @@ export function img(it, type = 'Primary', w = 400) {
   return '';
 }
 export const personImg = (p, w = 200) => p.PrimaryImageTag ? `${SI(p).url}/Items/${p.Id}/Images/Primary?tag=${p.PrimaryImageTag}&maxWidth=${w}&quality=85` : '';
-export const trickplayUrl = (id, width, index, sourceId) => `${S().url}/Videos/${id}/Trickplay/${width}/${index}.jpg?api_key=${S().token}&MediaSourceId=${sourceId}`;
+export const trickplayUrl = (id, width, index, sourceId) => `${S().url}/Videos/${id}/Trickplay/${width}/${index}.jpg?ApiKey=${S().token}&MediaSourceId=${sourceId}`;
 
 // ── Playback ───────────────────────────────────────────────────────────
 // Advertise local decoding capabilities only. Server conversion is never permitted.
@@ -135,7 +135,41 @@ function deviceProfile() {
 }
 // Returns { url, hls, source, playSessionId, method, subtitles[], audio[] }
 // clientAudio: the player can switch audio tracks itself, so a non-default track can still play the original file
+// Linux (WebKitGTK) plays original MKV files badly, so there the server repackages the file into
+// an HLS stream. The video is copied as is (never re-encoded); audio is copied when this engine can
+// decode it, otherwise converted to AAC. Playback stays inside the app window.
+export const linuxStream = () => !!globalThis.zenithDesktop?.linuxStream;
+function streamProfile() {
+  const ok = (m) => { try { return MediaSource.isTypeSupported(m); } catch { return false; } };
+  const video = [['h264','video/mp4; codecs="avc1.640028"'],['hevc','video/mp4; codecs="hvc1.2.4.L120.90"'],['av1','video/mp4; codecs="av01.0.08M.10"']].filter(([,m])=>ok(m)).map(([c])=>c);
+  const audio = [['aac','audio/mp4; codecs="mp4a.40.2"'],['ac3','audio/mp4; codecs="ac-3"'],['eac3','audio/mp4; codecs="ec-3"'],['mp3','audio/mp4; codecs="mp3"'],['opus','audio/mp4; codecs="opus"'],['flac','audio/mp4; codecs="flac"']].filter(([,m])=>ok(m)).map(([c])=>c);
+  return {
+    MaxStreamingBitrate: 2_000_000_000, MaxStaticBitrate: 2_000_000_000, DirectPlayProfiles: [], ContainerProfiles: [], CodecProfiles: [],
+    TranscodingProfiles: [{Container:'mp4',Type:'Video',Protocol:'hls',VideoCodec:video.join(','),AudioCodec:audio.join(',')||'aac',Context:'Streaming',MinSegments:1,BreakOnNonKeyFrames:true}],
+    SubtitleProfiles: ['vtt','srt','ass','ssa','subrip'].map(Format=>({Format,Method:'External'})),
+  };
+}
+const VIDEO_REASONS = /Video|Resolution|Bitrate|Framerate|Level|Profile|RefFrames|Anamorphic|Interlaced|BitDepth|Range/i;
+async function streamPlayback(id, { audioIndex, start = 0, sourceId } = {}) {
+  const body = { UserId: S().userId, DeviceProfile: streamProfile(), StartTimeTicks: Math.round(start * 1e7), AutoOpenLiveStream: false, MediaSourceId: sourceId || undefined,
+    EnableDirectPlay: false, EnableDirectStream: false, EnableTranscoding: true, AllowVideoStreamCopy: true, AllowAudioStreamCopy: true,
+    ...(audioIndex != null ? {AudioStreamIndex:audioIndex} : {}) };
+  const info = await api(`/Items/${id}/PlaybackInfo?UserId=${S().userId}`, { method: 'POST', body });
+  if (info.ErrorCode) throw new Error(info.ErrorCode === 'NotAllowed' ? "You're not allowed to play this." : `The server can't play this (${info.ErrorCode}).`);
+  const src = info.MediaSources?.[0];
+  if (!src) throw new Error('This item has no playable file.');
+  const reasons = (src.TranscodeReasons || []).filter((r) => VIDEO_REASONS.test(r) && !/Audio/i.test(r));
+  if (!src.TranscodingUrl || reasons.length) {
+    const v = (src.MediaStreams || []).find((s) => s.Type === 'Video');
+    throw new Error(`This file's video (${v?.Codec || 'unknown'}) can't play here without the server re-encoding it, and that's turned off.`);
+  }
+  return finish(id, info, src, S().url + src.TranscodingUrl, true, 'Direct stream');
+}
+
 export async function playback(id, { audioIndex, subIndex, start = 0, maxBitrate, forceTranscode = false, sourceId, clientAudio = false, burnSub = false } = {}) {
+  if (linuxStream()) {
+    return streamPlayback(id, { audioIndex, start, sourceId });
+  }
   if (burnSub) throw new Error('These image subtitles require server conversion. Choose text subtitles or turn subtitles off for direct play.');
   const body = {
     UserId: S().userId, DeviceProfile: deviceProfile(), StartTimeTicks: Math.round(start * 1e7), AutoOpenLiveStream: false, MediaSourceId: sourceId || undefined,
@@ -152,12 +186,14 @@ export async function playback(id, { audioIndex, subIndex, start = 0, maxBitrate
     throw new Error(`This original file cannot direct play on this device${formats ? ` (${formats})` : ''}. Server transcoding is disabled.`);
   }
   if (audioIndex != null && !clientAudio && audioIndex !== src.DefaultAudioStreamIndex) throw new Error('This device cannot switch audio tracks in the original file. Select the default audio track for direct play.');
-  const method = 'Direct play', hls = false;
-  const url = `${base}/Videos/${id}/stream?static=true&MediaSourceId=${src.Id}&PlaySessionId=${info.PlaySessionId}&api_key=${token}&DeviceId=${deviceId}`;
+  return finish(id, info, src, `${base}/Videos/${id}/stream?static=true&MediaSourceId=${src.Id}&PlaySessionId=${info.PlaySessionId}&ApiKey=${token}&DeviceId=${deviceId}`, false, 'Direct play');
+}
+function finish(id, info, src, url, hls, method) {
+  const base = S().url, token = S().token;
   const streams = src.MediaStreams || [];
   const subtitles = streams.filter((s) => s.Type === 'Subtitle').map((s) => ({
     index: s.Index, label: s.DisplayTitle || s.Language || `Track ${s.Index}`, lang: s.Language || '', forced: !!s.IsForced, isDefault: !!s.IsDefault, external: !!s.IsExternal,
-    textBased: s.IsTextSubtitleStream, url: s.IsTextSubtitleStream ? `${base}/Videos/${id}/${src.Id}/Subtitles/${s.Index}/0/Stream.vtt?api_key=${token}` : '',
+    textBased: s.IsTextSubtitleStream, url: s.IsTextSubtitleStream ? `${base}/Videos/${id}/${src.Id}/Subtitles/${s.Index}/0/Stream.vtt?ApiKey=${token}` : '',
   }));
   const audio = streams.filter((s) => s.Type === 'Audio').map((s) => ({ index: s.Index, label: s.DisplayTitle || s.Language || `Track ${s.Index}`, lang: s.Language || '', isDefault: !!s.IsDefault }));
   const video = streams.find((s) => s.Type === 'Video');
@@ -168,4 +204,4 @@ export const reportStart = (it, pb, pos) => api('/Sessions/Playing', { method: '
 export const reportProgress = (it, pb, pos, paused) => api('/Sessions/Playing/Progress', { method: 'POST', body: { ItemId: it.Id, MediaSourceId: pb.source.Id, PlaySessionId: pb.playSessionId, PositionTicks: ticks(pos), IsPaused: !!paused, CanSeek: true, EventName: 'timeupdate' } }).catch(() => {});
 export const reportStop = (it, pb, pos) => api('/Sessions/Playing/Stopped', { method: 'POST', body: { ItemId: it.Id, MediaSourceId: pb.source.Id, PlaySessionId: pb.playSessionId, PositionTicks: ticks(pos) } }).catch(() => {});
 export const stopTranscode = (pb) => api(`/Videos/ActiveEncodings?DeviceId=${deviceId}&PlaySessionId=${pb.playSessionId}`, { method: 'DELETE' }).catch(() => {});
-export const downloadUrl = (id) => `${S().url}/Items/${id}/Download?api_key=${S().token}`;
+export const downloadUrl = (id) => `${S().url}/Items/${id}/Download?ApiKey=${S().token}`;
