@@ -172,13 +172,45 @@ document.addEventListener('focusout', (e) => { if (e.target.matches?.('#top-sear
   app.addEventListener('scroll', () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; btn.classList.toggle('show', app.scrollTop > 1400); }); }, { passive: true });
 })();
 
-// Mark rows that continue past an edge, so that edge dissolves instead of cutting cards off
+// Rows run to the window edge with the last card peeking about a third, a soft gutter with the arrow
+// on whichever side has more, and page dots in the row header
 (() => {
   const app = document.getElementById('app'); if (!app) return;
-  const edge = (strip) => { const sh = strip.parentElement; if (!sh?.classList.contains('shelf')) return; const max = strip.scrollWidth - strip.clientWidth; sh.classList.toggle('more-l', strip.scrollLeft > 4); sh.classList.toggle('more-r', strip.scrollLeft < max - 4); };
+  const PEEK = 0.35;
+  const size = (strip) => {
+    if (strip.classList.contains('people')) return;
+    const cs = getComputedStyle(strip), gap = parseFloat(cs.columnGap) || 16;
+    const avail = strip.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const vw = innerWidth / 100, base = strip.classList.contains('wide') ? Math.min(320, Math.max(230, 24 * vw)) : Math.min(172, Math.max(132, 14 * vw));
+    const fit = (k) => Math.floor((avail - gap * k) / (k + PEEK));
+    const f = Math.max(1, Math.floor((avail - PEEK * base) / (base + gap)));
+    const n = Math.abs(fit(f + 1) - base) < Math.abs(fit(f) - base) ? f + 1 : f;
+    const w = fit(n);
+    strip.dataset.step = String(n * (w + gap));
+    if (strip.children.length <= n) { strip.style.removeProperty('--colw'); return; }
+    if (strip.style.getPropertyValue('--colw') !== w + 'px') strip.style.setProperty('--colw', w + 'px');
+  };
+  const dots = (strip, sh) => {
+    const head = sh.parentElement?.querySelector(':scope>.row-head'); if (!head) return;
+    const step = Number(strip.dataset.step) || strip.clientWidth * 0.8, max = strip.scrollWidth - strip.clientWidth;
+    const pages = max > 4 ? Math.ceil(max / step) + 1 : 0;
+    let d = head.querySelector(':scope>.pdots');
+    if (!pages) { d?.remove(); return; }
+    if (!d) { d = document.createElement('span'); d.className = 'pdots'; head.insertBefore(d, head.querySelector(':scope>a')); }
+    if (d.childElementCount !== pages) d.innerHTML = '<i></i>'.repeat(pages);
+    const cur = strip.scrollLeft >= max - 4 ? pages - 1 : Math.min(pages - 1, Math.round(strip.scrollLeft / step));
+    [...d.children].forEach((x, i) => x.classList.toggle('on', i === cur));
+  };
+  const edge = (strip, resize) => {
+    const sh = strip.parentElement; if (!sh?.classList.contains('shelf')) return;
+    if (resize) size(strip);
+    const max = strip.scrollWidth - strip.clientWidth; sh.classList.toggle('more-l', strip.scrollLeft > 4); sh.classList.toggle('more-r', strip.scrollLeft < max - 4);
+    dots(strip, sh);
+  };
   let raf = 0;
-  const all = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; app.querySelectorAll('.shelf>.strip').forEach(edge); }); };
-  app.addEventListener('scroll', (e) => { if (e.target.classList?.contains('strip')) edge(e.target); }, { passive: true, capture: true });
+  const all = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; app.querySelectorAll('.shelf>.strip').forEach((x) => edge(x, true)); }); };
+  app.addEventListener('scroll', (e) => { if (e.target.classList?.contains('strip')) edge(e.target, false); }, { passive: true, capture: true });
   new MutationObserver(all).observe(app, { childList: true, subtree: true });
   addEventListener('resize', all); all();
 })();
+

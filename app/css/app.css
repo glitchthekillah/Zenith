@@ -918,14 +918,6 @@ html.linux .pl-pip-bg{filter:brightness(.3)}
 .to-top .i{width:18px;height:18px}
 body.playing .to-top{display:none}
 
-/* Rows that continue off-screen dissolve at the edge instead of being cut off (slowly shifting noise) */
-.shelf{--dz-r:linear-gradient(#000,#000);--dz-l:linear-gradient(#000,#000)}
-.shelf.more-r{--dz-r:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22160%22%20height%3D%22480%22%20viewBox%3D%220%200%20160%20480%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20x2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22/%3E%3C/linearGradient%3E%3Cfilter%20id%3D%22f%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.085%20.06%22%20numOctaves%3D%222%22%20seed%3D%227%22%20result%3D%22n%22%3E%3Canimate%20attributeName%3D%22baseFrequency%22%20dur%3D%229s%22%20values%3D%22.085%20.06%3B.095%20.052%3B.078%20.068%3B.085%20.06%22%20repeatCount%3D%22indefinite%22/%3E%3C/feTurbulence%3E%3CfeColorMatrix%20in%3D%22n%22%20type%3D%22matrix%22%20values%3D%220%200%200%200%201%200%200%200%200%201%200%200%200%200%201%201%200%200%200%200%22%20result%3D%22na%22/%3E%3CfeComposite%20in%3D%22SourceGraphic%22%20in2%3D%22na%22%20operator%3D%22arithmetic%22%20k2%3D%221.5%22%20k3%3D%22-1%22%20k4%3D%22-.05%22%20result%3D%22d%22/%3E%3CfeComponentTransfer%20in%3D%22d%22%3E%3CfeFuncA%20type%3D%22linear%22%20slope%3D%223.2%22%20intercept%3D%220%22/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3C/defs%3E%3Crect%20width%3D%22160%22%20height%3D%22480%22%20fill%3D%22url%28%23g%29%22%20filter%3D%22url%28%23f%29%22/%3E%3C/svg%3E")}
-.shelf.more-l{--dz-l:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22160%22%20height%3D%22480%22%20viewBox%3D%220%200%20160%20480%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%221%22%20x2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22/%3E%3C/linearGradient%3E%3Cfilter%20id%3D%22f%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.085%20.06%22%20numOctaves%3D%222%22%20seed%3D%227%22%20result%3D%22n%22%3E%3Canimate%20attributeName%3D%22baseFrequency%22%20dur%3D%229s%22%20values%3D%22.085%20.06%3B.095%20.052%3B.078%20.068%3B.085%20.06%22%20repeatCount%3D%22indefinite%22/%3E%3C/feTurbulence%3E%3CfeColorMatrix%20in%3D%22n%22%20type%3D%22matrix%22%20values%3D%220%200%200%200%201%200%200%200%200%201%200%200%200%200%201%201%200%200%200%200%22%20result%3D%22na%22/%3E%3CfeComposite%20in%3D%22SourceGraphic%22%20in2%3D%22na%22%20operator%3D%22arithmetic%22%20k2%3D%221.5%22%20k3%3D%22-1%22%20k4%3D%22-.05%22%20result%3D%22d%22/%3E%3CfeComponentTransfer%20in%3D%22d%22%3E%3CfeFuncA%20type%3D%22linear%22%20slope%3D%223.2%22%20intercept%3D%220%22/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3C/defs%3E%3Crect%20width%3D%22160%22%20height%3D%22480%22%20fill%3D%22url%28%23g%29%22%20filter%3D%22url%28%23f%29%22/%3E%3C/svg%3E")}
-.shelf>.strip{-webkit-mask:var(--dz-l) left/160px 100% no-repeat,linear-gradient(#000,#000) center/calc(100% - 318px) 100% no-repeat,var(--dz-r) right/160px 100% no-repeat;mask:var(--dz-l) left/160px 100% no-repeat,linear-gradient(#000,#000) center/calc(100% - 318px) 100% no-repeat,var(--dz-r) right/160px 100% no-repeat}
-html.linux .shelf.more-r{--dz-r:linear-gradient(90deg,#000,transparent)}
-html.linux .shelf.more-l{--dz-l:linear-gradient(270deg,#000,transparent)}
-@media (prefers-reduced-motion:reduce){.shelf.more-r{--dz-r:linear-gradient(90deg,#000,transparent)}.shelf.more-l{--dz-l:linear-gradient(270deg,#000,transparent)}}
 /* Row titles that stand out: gradient tick, bolder type, accent on the subject, a soft underline glow */
 .row-head{align-items:center;margin-bottom:10px}
 .row-head h3{position:relative;display:block;font:700 23px/1.15 var(--disp);letter-spacing:-.025em}
@@ -974,9 +966,28 @@ html.linux .shelf.more-l{--dz-l:linear-gradient(270deg,#000,transparent)}
 .hero-skel{height:clamp(300px,25vw,420px);border-radius:24px;margin-bottom:22px;background:var(--glass);border:1px solid var(--line);animation:shimmer 1.4s ease-in-out infinite}
 .skel-title{display:block;width:220px;height:24px;border-radius:8px;background:var(--glass2);animation:shimmer 1.4s ease-in-out infinite}
 .skel-title::before,.skel-title::after{display:none!important}
-main .card img,main .art img,main .person img,main .lt-bg img,main .lt-fan img,main .backdrop img,main .season img,main .hr-art img,main .poster img,main .detail .art img{opacity:0;transition:opacity .35s ease}
-main img.ld{opacity:1}
-.lt-bg img.ld{opacity:1}
-@media (prefers-reduced-motion:reduce){main img{transition:none}}
+main .card img,main .art img,main .person img,main .lt-fan img,main .season img,main .hr-art img,main .poster img{animation:imgIn .45s ease-out both}
+@keyframes imgIn{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){main img{animation:none!important}}
 /* Rows: room on both sides so a hovered/outlined first card isn't clipped at the left edge */
 .strip{padding-left:10px!important;padding-right:10px!important;margin-left:-10px;margin-right:-10px;scroll-padding-inline:10px}
+/* No arrow toward an edge you're already at */
+.shelf:not(.more-l)>.arrow.l,.shelf:not(.more-r)>.arrow.r{opacity:0!important;pointer-events:none!important;visibility:hidden}
+
+
+/* Rows: full bleed to the window edge, last card peeks, soft gutter with the arrow, page dots */
+main .shelf{margin:0 -28px}
+.shelf>.strip[style*="--colw"]{grid-auto-columns:var(--colw)}
+.shelf>.strip{padding-left:28px!important;padding-right:28px!important;margin-left:0;margin-right:0;scroll-padding-inline:28px}
+.shelf>.strip{scroll-snap-type:x mandatory}.shelf>.strip>*{scroll-snap-align:start}
+.shelf.more-r>.strip{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 120px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 120px),transparent)}
+.shelf.more-l>.strip{-webkit-mask-image:linear-gradient(90deg,transparent,#000 90px);mask-image:linear-gradient(90deg,transparent,#000 90px)}
+.shelf.more-l.more-r>.strip{-webkit-mask-image:linear-gradient(90deg,transparent,#000 90px,#000 calc(100% - 120px),transparent);mask-image:linear-gradient(90deg,transparent,#000 90px,#000 calc(100% - 120px),transparent)}
+.shelf>.arrow.r{right:18px}.shelf>.arrow.l{left:18px}
+.shelf>.arrow{background:rgba(0,0,0,.55);border-color:transparent}
+.pdots{display:flex;gap:4px;margin-left:auto;opacity:0;transition:opacity .2s}
+.row:hover .pdots{opacity:1}
+.pdots i{width:14px;height:3px;border-radius:2px;background:rgba(255,255,255,.22);transition:background .2s}
+.pdots i.on{background:#fff}
+.row-head>.pdots+a{margin-left:14px}
+@media (max-width:980px){main .shelf{margin:0 -12px}.shelf>.strip{padding-left:12px!important;padding-right:12px!important;scroll-padding-inline:12px}}

@@ -121,6 +121,8 @@ route('home', () => defer(async (publish, alive) => {
   let resumeTop = null, shuffle = [];
   const paint = () => publish(greeting(stats, resumeTop, shuffle), 0, true);
   const add = (order, html) => { if (alive()) { parts.set(order, html); publish(html, order); paint(); } };
+  // Placeholders where the banner and first rows will land, so the page doesn't jump as they arrive
+  if (jf.ready()) { publish('<div class="hero-skel skeleton"></div>', 1); publish(`<section class="row"><div class="row-head"><h3 class="skel-title skeleton"></h3></div>${loading(6, 'wide')}</section>`, 2); }
   if (jf.ready()) {
     // Each server contributes as soon as it answers; no all-servers barrier.
     const stream = (fn, update) => {
@@ -156,7 +158,8 @@ route('home', () => defer(async (publish, alive) => {
       }).slice(0, 24));
       stats.resume = resume.length; resumeTop = resume[0] || resumeTop;
       add(2, shelf('Continue watching', resume.map((i) => card(i, { wide: true, dismiss: true })).join(''), '', true));
-      const seed = resume[0];
+      // Only something you actually got into, not a few seconds of an accidental play
+      const seed = resume.find((i) => (i.UserData?.PlayedPercentage || 0) >= 10 || i.Type === 'Episode');
       if (seed && !becauseId) {
         becauseId = seed.SeriesId || seed.Id;
         const owner = groups.byId(seed._g);
@@ -337,7 +340,7 @@ async function fillLibrary(parentId, type, st, reset) {
   const grid = $('#lib-grid'); if (!grid || (grid.dataset.busy && !reset)) return;
   const request = {}; grid.loadRequest = request; grid.dataset.busy = '1';
   const current = () => grid.isConnected && grid.loadRequest === request;
-  if (reset) st.start = 0;
+  if (reset) { st.start = 0; grid.innerHTML = loading(18); }
   const q = { parentId: parentId || '', types: type || '', sort: st.sort === 'Random' ? 'Random' : `${st.sort},SortName`, order: st.order, start: st.start, limit: 60, filters: st.filter, genres: st.genre, recursive: true };
   if (st.sort !== 'SortName' && st.sort !== 'Random' && reset) q.order = st.order === 'Ascending' && ['DateCreated', 'PremiereDate', 'CommunityRating', 'DatePlayed'].includes(st.sort) ? 'Descending' : st.order;
   try {
@@ -751,7 +754,8 @@ document.addEventListener('click', async (e) => {
   const w = e.target.closest('[data-watched]');
   if (w) {
     const on = !w.classList.contains('on');
-    try { await jf.setWatched(w.dataset.watched, on); w.classList.toggle('on', on); toast(on ? 'Marked as watched' : 'Marked as not watched', 'ok', async () => { await jf.setWatched(w.dataset.watched, !on); w.classList.toggle('on', !on); }); } catch (err) { toast(err.message, 'bad'); }
+    const wg = groups.byId(w.closest('[data-g]')?.dataset.g); const mark = (v) => wg ? groups.run(wg, () => jf.setWatched(w.dataset.watched, v)) : jf.setWatched(w.dataset.watched, v);
+    try { await mark(on); w.classList.toggle('on', on); toast(on ? 'Marked as watched' : 'Marked as not watched', 'ok', async () => { await mark(!on); w.classList.toggle('on', !on); }); } catch (err) { toast(err.message, 'bad'); }
     return;
   }
   const fav = e.target.closest('[data-fav]');
@@ -767,7 +771,7 @@ document.addEventListener('click', async (e) => {
   const open = e.target.closest('[data-open]');
   if (open) { e.preventDefault(); desktop ? desktop.open(open.dataset.open) : window.open(open.dataset.open, '_blank', 'noopener'); return; }
   const sc = e.target.closest('[data-scroll]');
-  if (sc) { const strip = sc.parentElement.querySelector('.strip'); strip.scrollBy({ left: Number(sc.dataset.scroll) * strip.clientWidth * 0.85 }); }
+  if (sc) { const strip = sc.parentElement.querySelector('.strip'); strip.scrollBy({ left: Number(sc.dataset.scroll) * (Number(strip.dataset.step) || strip.clientWidth * 0.8), behavior: 'smooth' }); }
 });
 // After playback, refresh the page so progress bars and "Next up" are current
 on('player', ({ open }) => { if (!open && ['home', 'item', 'movies', 'shows', 'library'].includes(location.hash.replace(/^#\/?/, '').split('/')[0] || 'home')) import('./core.js').then((c) => c.render()); });
