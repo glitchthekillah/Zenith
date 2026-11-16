@@ -844,3 +844,8 @@ body.playing #server-loading,body.mini #server-loading{display:none}
 .rc-n{width:24px;font:700 15px var(--disp);color:var(--amber)}
 .rc-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rc-c{color:var(--mute);font-size:13px}
+/* Slide change: the old slide fades out while the new one fades in (no lingering double image) */
+.hero-split .hero-slide{transition:opacity .5s ease .12s,visibility 0s!important}
+.hero-split .hero-slide[hidden]{opacity:0!important;transition:opacity .35s ease,visibility 0s .35s!important}
+.hero-split .hero-slide:not([hidden]) .hero-art img{animation:none!important}
+@media(prefers-reduced-motion:reduce){.hero-split .hero-slide,.hero-split .hero-slide[hidden]{transition:none!important}}
