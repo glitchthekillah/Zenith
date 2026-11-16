@@ -41,8 +41,13 @@ function paintServerLoading() {
   if (!pill) return;
   const state = serverLoading.current();
   const multiple = settings.groups.filter(g => Object.values(g.servers || {}).some(s => s?.url)).length > 1;
-  pill.hidden = !multiple || !state.count || $('#top').hidden;
-  $('[data-server-loading-text]', pill).textContent = `Loading ${state.count} server${state.count === 1 ? '' : 's'}`;
+  const show = multiple && state.count && !$('#top').hidden;
+  if (show) {
+    pill.hidden = false;
+    const names = state.names.filter(Boolean);
+    $('[data-server-loading-text]', pill).textContent = names.length && names.length <= 2 ? `Loading ${names.join(' and ')}` : `Loading ${state.count} servers`;
+    requestAnimationFrame(() => pill.classList.add('show'));
+  } else pill.classList.remove('show');
   pill.title = state.names.join(', ');
 }
 on('server-loading', () => { clearTimeout(serverLoadingTimer); serverLoadingTimer = setTimeout(paintServerLoading, 150); });

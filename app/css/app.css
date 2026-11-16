@@ -442,8 +442,6 @@ button.card>.art{width:100%;flex:none}
 .hello-stats a:hover{border-color:rgba(var(--pink-rgb),.6);color:var(--text)}
 .hello-stats b{color:var(--text);font:700 15px var(--disp)}
 .hello{position:relative;overflow:hidden;isolation:isolate}
-.hello-bg{position:absolute;inset:0 0 0 35%;z-index:-1;pointer-events:none;-webkit-mask-image:linear-gradient(90deg,transparent,#000 55%);mask-image:linear-gradient(90deg,transparent,#000 55%)}
-.hello-bg img{width:100%;height:100%;object-fit:cover;opacity:.32;filter:blur(2px) saturate(1.2)}
 .hello-acts{display:flex;flex-direction:column;gap:8px;min-width:0;width:clamp(260px,26vw,380px);max-width:100%}
 .hello-resume{display:flex;align-items:center;gap:14px;width:100%;padding:8px 14px 8px 8px;border-radius:16px;border:1px solid rgba(var(--pink-rgb),.35);background:linear-gradient(120deg,rgba(var(--amber-rgb),.14),rgba(var(--pink-rgb),.14));backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);color:var(--text);text-align:left;cursor:pointer;transition:transform .2s var(--ease),border-color .2s,box-shadow .2s}
 .hello-resume:hover{transform:translateY(-2px);border-color:rgba(var(--pink-rgb),.7);box-shadow:0 18px 36px -20px rgba(var(--pink-rgb),.7)}
@@ -741,12 +739,13 @@ body.scrolling .card:hover:not(:focus-visible) .play-over{opacity:0;transition:n
 .pl-error [data-copy-codecs]{margin-bottom:16px}
 
 /* Quiet, persistent activity indication; no navigation or layout movement. */
-#server-loading{position:fixed;right:26px;top:calc(var(--tb) + 88px);z-index:35;display:flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--line2);border-radius:999px;background:var(--panel);color:var(--mute);font:500 12px var(--disp);pointer-events:none}
-#server-loading i{width:12px;height:12px;border:1.5px solid var(--line2);border-top-color:var(--pink);border-radius:50%;animation:server-turn .9s linear infinite}
+#server-loading{position:fixed;left:50%;bottom:22px;z-index:35;display:flex;align-items:center;gap:10px;padding:8px 16px 8px 10px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(18,15,26,.78);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 18px 40px -18px rgba(0,0,0,.9);color:var(--text);font:500 13px var(--disp);pointer-events:none;opacity:0;transform:translate(-50%,14px);transition:opacity .25s var(--ease),transform .25s var(--ease)}
+#server-loading.show{opacity:1;transform:translate(-50%,0)}
+#server-loading i{width:22px;height:22px;flex:none;border-radius:8px;background:conic-gradient(from 0deg,transparent 0 25%,var(--pink) 60%,var(--amber) 100%);-webkit-mask:radial-gradient(circle,transparent 5px,#000 6px);mask:radial-gradient(circle,transparent 5px,#000 6px);border-radius:50%;animation:server-turn .9s linear infinite}
 body.playing #server-loading,body.mini #server-loading{display:none}
 @keyframes server-turn{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){#server-loading i{animation:none;border-color:var(--pink)}}
-@media(max-width:600px){#server-loading{right:14px;top:calc(var(--tb) + 78px);font-size:11px}}
+@media(prefers-reduced-motion:reduce){#server-loading i{animation:none}#server-loading{transition:none}}
+@media(max-width:600px){#server-loading{bottom:14px;font-size:12px}}
 /* Sleep timer choices and the "still watching?" prompt */
 .pl-menu .seg{display:flex;flex-wrap:wrap;gap:6px;padding:2px 4px 6px}
 .pl-menu .seg button{flex:1 1 auto;width:auto;justify-content:center;padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);font-size:13px}
@@ -809,3 +808,17 @@ body.playing #server-loading,body.mini #server-loading{display:none}
 @media(max-width:860px){.hero-split .hero-in{max-width:none!important}.hero-split .hero-slide::before{background:linear-gradient(0deg,#0a0910 10%,rgba(10,9,16,.7) 55%,rgba(10,9,16,.1))}.hero-nav{display:none}}
 .hero-split .hero-in h2{font-size:clamp(28px,3.4vw,48px)}
 .hero.hero-split{margin-bottom:22px}
+
+/* 0.2.9 hero: show the whole picture (16:9, no heavy crop) on the right, fading into the text side;
+   arrows sit with the timer bars in the corner instead of over the text */
+.hero-split .hero-slide::before{background:radial-gradient(70% 120% at 85% 50%,rgba(var(--pink-rgb),.07),transparent 70%),linear-gradient(90deg,#0b0a12 0%,#0b0a12 30%,rgba(11,10,18,0) 60%)!important}
+.hero.hero-split{background:#0b0a12}
+.hero-split .hero-art{left:auto!important;right:0;top:0;bottom:0;width:auto!important;height:100%!important;aspect-ratio:16/9!important;max-width:78%;z-index:1;-webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.25) 12%,rgba(0,0,0,.7) 26%,#000 42%);mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.25) 12%,rgba(0,0,0,.7) 26%,#000 42%)}
+.hero.hero-split .hero-slide .hero-art img{object-fit:cover;object-position:center}
+.hero-ctrl{position:absolute;right:18px;bottom:16px;z-index:4;display:flex;align-items:center;gap:10px;padding:5px;border-radius:14px;background:rgba(11,10,18,.45);border:1px solid rgba(255,255,255,.1);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+.hero-ctrl .hero-dots{position:static!important}
+.hero-ctrl .hero-nav{position:static;margin:0;width:30px;height:30px;border-radius:10px;opacity:.75;background:transparent;border:0}
+.hero-ctrl .hero-nav .i{width:16px;height:16px}
+.hero-ctrl .hero-nav:hover{opacity:1;background:rgba(255,255,255,.1)}
+@media(max-width:860px){.hero-split .hero-art{max-width:none;width:100%!important;height:auto!important;bottom:auto;-webkit-mask-image:linear-gradient(0deg,transparent 0,#000 40%);mask-image:linear-gradient(0deg,transparent 0,#000 40%)}.hero-ctrl{top:12px;bottom:auto}}
+.hero-split .hero-slide{min-height:clamp(320px,29vw,580px)!important}

@@ -213,8 +213,7 @@ function greeting(st, resumeTop, shuffle) {
   const name = settings.profile?.name || settings.servers.jellyfin?.name || settings.servers.kavita?.name || '';
   const chips = [[st.resume, 'in progress', '#/home'], [st.next, 'up next', '#/shows'], [st.read, 'to keep reading', '#/read'], [st.ready, st.ready === 1 ? 'request ready' : 'requests ready', '#/request']].filter(([n]) => n);
   const pick = shuffle.length ? shuffle[0] : null;
-  const bg = resumeTop && (jf.img(resumeTop, 'Backdrop', 1280) || jf.img(resumeTop, 'Thumb', 1280));
-  return `<section class="hello">${bg ? `<span class="hello-bg"><img src="${esc(bg)}" alt=""></span>` : ''}<a class="hello-pic" href="#/settings" title="Change your picture">${avatarHtml(name || '?')}</a>
+  return `<section class="hello"><a class="hello-pic" href="#/settings" title="Change your picture">${avatarHtml(name || '?')}</a>
     <div class="hello-text"><span class="kicker">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }))}</span><h1>${hi}${name ? `, <em>${esc(name)}</em>` : ''}</h1>
       ${chips.length ? `<div class="hello-stats">${chips.map(([n, l, href]) => `<a href="${href}"><b>${n}</b>${esc(l)}</a>`).join('')}</div>` : ''}</div>
     <div class="hello-acts">${resumeTop ? resumeCard(resumeTop) : ''}${pick ? `<button class="btn hello-surprise" data-play="${pick.Id}" data-g="${esc(pick._g)}" title="${esc(pick.Name)}">${icon('shuffle')} Surprise me</button>` : ''}</div></section>`;
@@ -247,7 +246,7 @@ function hero(list) {
     <div class="hero-art">${bg ? `<img src="${esc(bg)}" alt="">` : ''}</div></div>`;
   }).join('');
   const many = list.length > 1;
-  return `<section class="hero hero-split" id="hero" tabindex="-1" aria-roledescription="carousel">${slides}${many ? `<button class="hero-nav prev" data-hero-step="-1" aria-label="Previous">${icon('back')}</button><button class="hero-nav next" data-hero-step="1" aria-label="Next">${icon('next')}</button><div class="hero-dots">${list.map((_, i) => `<button data-hero="${i}" class="${i ? '' : 'on'}" aria-label="Slide ${i + 1}"><i></i></button>`).join('')}</div>` : ''}</section>`;
+  return `<section class="hero hero-split" id="hero" tabindex="-1" aria-roledescription="carousel">${slides}${many ? `<div class="hero-ctrl"><button class="hero-nav" data-hero-step="-1" aria-label="Previous">${icon('back')}</button><div class="hero-dots">${list.map((_, i) => `<button data-hero="${i}" class="${i ? '' : 'on'}" aria-label="Slide ${i + 1}"><i></i></button>`).join('')}</div><button class="hero-nav" data-hero-step="1" aria-label="Next">${icon('next')}</button></div>` : ''}</section>`;
 }
 let heroTimer, boundHero;
 const HERO_MS = 9000;
