@@ -6143,7 +6143,7 @@ dependencies = [
 
 [[package]]
 name = "zenith"
-version = "0.2.13"
+version = "0.2.14"
 dependencies = [
  "base64 0.22.1",
  "futures-util",

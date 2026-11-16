@@ -4,6 +4,7 @@ import * as jf from './jellyfin.js';
 import * as kv from './kavita.js';
 import * as seerr from './seerr.js';
 import * as rq from './requests.js';
+import { applyPictureBg, saveImage, savedImage, findTitles } from './backdrop.js';
 import { avatarHtml, hasAvatar, pickAvatar, clearAvatar } from './avatar.js';
 import { LANGS, SUB_COLORS, SUB_BG_COLORS, SUB_BGS, SUB_EDGES, SUB_FONTS, SUB_WEIGHTS, SUB_PRESETS, subDefaults, applySubStyle } from './tracks.js';
 
@@ -36,7 +37,33 @@ export function applyAccent() {
   let t = hl, k = 0; if (document.documentElement.dataset.theme === 'light') while (lum(t) > 0.18 && k++ < 12) t = darken(t, 0.12);
   root.setProperty('--hl-text', t);
 }
-export function applySky() { const c = skyColors(); window.zenithSky?.set(c); const sky = document.querySelector('.sky'); if (sky && !document.body.classList.contains('liquid')) sky.style.background = c[0]; }
+// Background styles: the moving liquid (default), aurora, nebula, silk (all drawn by sky.js), or one solid colour
+export const BG_MODES = [['liquid', 'Liquid', 'Thick, slow and alive'], ['aurora', 'Aurora', 'Northern lights'], ['nebula', 'Nebula', 'Clouds and stars'], ['silk', 'Silk', 'Ribbons of light'], ['embers', 'Embers', 'Sparks drifting up'], ['contours', 'Contours', 'A moving map of hills'], ['rays', 'Rays', 'Light through haze'], ['showcase', 'Showcase', "What's on your servers"], ['image', 'Your picture', 'Upload your own'], ['title', 'A title', 'Search and pick one'], ['solid', 'Solid', 'One colour you pick']];
+const PICTURE = ['showcase', 'image', 'title'];
+const bgMode = () => (BG_MODES.some(([k]) => k === settings.look.bg) ? settings.look.bg : 'liquid');
+// Switching styles crossfades: a still copy of the old background sits on top and fades away
+let lastBg = null;
+function fadeFrom(sky) {
+  if (!sky || lastBg === null) return;
+  const v = document.createElement('div'); v.className = 'sky-fade';
+  const pic = sky.querySelector('.sky-img img.on');
+  if (lastBg === 'solid') v.style.background = getComputedStyle(sky).backgroundColor;
+  else if (pic) { const im = pic.cloneNode(); im.className = ''; v.appendChild(im); }
+  else { const c = window.zenithSky?.snapshot?.(); if (c) v.appendChild(c); else v.style.background = getComputedStyle(sky).backgroundColor; }
+  sky.appendChild(v);
+  requestAnimationFrame(() => requestAnimationFrame(() => v.classList.add('out')));
+  setTimeout(() => v.remove(), 1200);
+}
+export function applySky() {
+  const mode = bgMode(), c = skyColors(), sky = document.querySelector('.sky');
+  if (lastBg !== mode) fadeFrom(sky);
+  lastBg = mode;
+  if (mode === 'solid' || PICTURE.includes(mode)) document.body.dataset.bg = mode; else { delete document.body.dataset.bg; window.zenithSky?.style(mode); }
+  applyPictureBg(mode);
+  if (sky) { c.forEach((x, i) => sky.style.setProperty('--sk' + i, x)); sky.style.setProperty('--sk-solid', settings.look.solid || '#14111c'); }
+  applySkyColors();
+}
+function applySkyColors() { const c = skyColors(); window.zenithSky?.set(c); const sky = document.querySelector('.sky'); if (sky && !document.body.classList.contains('liquid')) sky.style.background = c[0]; }
 const SERVERS = [
   ['jellyfin', 'Jellyfin', 'Movies, shows and anime to watch.', 'Username'],
   ['kavita', 'Kavita', 'Books, manga and comics to read.', 'Username'],
@@ -118,8 +145,10 @@ document.addEventListener('click', async (e) => {
   }
   const ac = e.target.closest('[data-accent]');
   if (ac) { settings.look.accent = { preset: ac.dataset.accent }; save(); const de = document.documentElement; de.classList.add('glide'); setTimeout(() => de.classList.remove('glide'), 1000); applyAccent(); $$('[data-accent]').forEach((b) => b.classList.toggle('on', b === ac)); const now = accentNow(); $$('[data-accent-pick]').forEach((i) => { i.value = i.dataset.accentPick === 'hl' ? now.hl : now.btn[i.dataset.accentPick === 'b0' ? 0 : 1]; }); return; }
+  const bm = e.target.closest('[data-bg-mode]');
+  if (bm) { settings.look = { ...settings.look, bg: bm.dataset.bgMode }; save(); applySky(); $$('[data-bg-mode]').forEach((b) => b.classList.toggle('on', b === bm)); bm.parentElement.dataset.bgm = bm.dataset.bgMode; return; }
   const pp = e.target.closest('[data-sky-preset]');
-  if (pp) { settings.look = { preset: pp.dataset.skyPreset, colors: null }; save(); applySky(); $$('[data-sky-preset]').forEach((b) => b.classList.toggle('on', b === pp)); skyInputs(); }
+  if (pp) { settings.look = { ...settings.look, preset: pp.dataset.skyPreset, colors: null }; save(); applySky(); $$('[data-sky-preset]').forEach((b) => b.classList.toggle('on', b === pp)); skyInputs(); }
   if (e.target.closest('[data-avatar-clear]')) return clearAvatar();
   const sp = e.target.closest('[data-subpick]');
   if (sp) { const [k, v] = sp.dataset.subpick.split(/:(.*)/); settings.playback[k] = k === 'subWeight' ? Number(v) : v; settings.playback.subPreset = 'custom'; $$('[data-subpreset]').forEach((b) => b.classList.remove('on')); save(); sp.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === sp)); const pv = $('#sub-preview'); if (pv) applySubStyle(pv); return; }
@@ -143,9 +172,11 @@ document.addEventListener('input', (e) => {
   if (ss) { settings.playback[ss.dataset.substyle] = Number(ss.value); settings.playback.subPreset = 'custom'; $$('[data-subpreset]').forEach((b) => b.classList.remove('on')); save(); ss.nextElementSibling.textContent = ss.value + '%'; const pv = $('#sub-preview'); if (pv) applySubStyle(pv); return; }
   const ap = e.target.closest('[data-accent-pick]');
   if (ap) { const now = accentNow(); const a = { preset: 'custom', hl: now.hl, btn: [...now.btn] }; if (ap.dataset.accentPick === 'hl') a.hl = ap.value; else a.btn[ap.dataset.accentPick === 'b0' ? 0 : 1] = ap.value; settings.look.accent = a; save(); applyAccent(); $$('[data-accent]').forEach((b) => b.classList.remove('on')); return; }
+  const sp = e.target.closest('[data-bg-solid]');
+  if (sp) { settings.look = { ...settings.look, solid: sp.value }; save(); applySky(); const pv = document.querySelector('.bgm-solid'); if (pv) pv.style.background = sp.value; return; }
   const i = e.target.closest('[data-sky]'); if (!i) return;
   const c = [...skyColors()]; c[Number(i.dataset.sky)] = i.value;
-  settings.look = { preset: 'custom', colors: c }; applySky(); $$('[data-sky-preset]').forEach((b) => b.classList.remove('on'));
+  settings.look = { ...settings.look, preset: 'custom', colors: c }; applySky(); $$('[data-sky-preset]').forEach((b) => b.classList.remove('on'));
 });
 document.addEventListener('change', async (e) => {
   if (e.target.closest('[data-sky]')) return save();
@@ -214,7 +245,11 @@ route('settings', async (sub) => {
       ${group('Theme', `<div class="themes">${[['dark', 'Dark'], ['light', 'Light'], ['system', 'Match my system']].map(([v, l]) => `<button class="theme-card ${settings.theme === v ? 'on' : ''}" data-theme-pick="${v}"><span class="tc ${v}"><i></i><i></i><i></i></span>${l}</button>`).join('')}</div>`)}
       ${group('Highlight and buttons', `<div class="accents">${ACCENTS.map(([k, l, h, b]) => `<button class="accent ${(settings.look.accent?.preset || 'zenith') === k && !settings.look.accent?.hl ? 'on' : ''}" data-accent="${k}"><span class="ac-btn" style="background:linear-gradient(135deg,${b[0]},${b[1]})"></span><span class="ac-dot" style="background:${h}"></span>${l}</button>`).join('')}</div>
         <div class="sky-picks" style="padding-bottom:8px">${[['hl', 'Highlight', accentNow().hl], ['b0', 'Button start', accentNow().btn[0]], ['b1', 'Button end', accentNow().btn[1]]].map(([k, l, v]) => `<label><input type="color" data-accent-pick="${k}" value="${v}">${l}</label>`).join('')}</div>`)}
-      ${group('Background', `<div class="set-row" style="display:block;border:0;padding-top:0"><div><b>Palette</b><small>Pick one, or set your own four colours below.</small></div><div class="palettes">${PALETTES.map(([k, l, c]) => `<button class="pal ${settings.look.preset === k ? 'on' : ''}" data-sky-preset="${k}" title="${l}"><span style="background:radial-gradient(circle at 30% 30%,${c[3]},transparent 45%),radial-gradient(circle at 75% 70%,${c[2]},transparent 60%),linear-gradient(135deg,${c[1]},${c[0]})"></span>${l}</button>`).join('')}</div>
+      ${group('Background', `<div class="bg-modes" data-bgm="${bgMode()}">${BG_MODES.map(([k, l, d]) => `<button class="bg-mode ${bgMode() === k ? 'on' : ''}" data-bg-mode="${k}">${k === 'solid' ? `<span class="bgm-prev bgm-solid" style="background:${settings.look.solid || '#14111c'}"></span>` : PICTURE.includes(k) ? `<span class="bgm-prev bgm-pic bgm-${k}"${k === 'image' && savedImage() ? ` style="background-image:url('${savedImage()}')"` : k === 'title' && settings.look.pick?.thumb ? ` style="background-image:url('${esc(settings.look.pick.thumb)}')"` : ''}></span>` : `<canvas class="bgm-prev" data-sky-preview="${k}" width="256" height="140"></canvas>`}<b>${l}</b><small>${d}</small></button>`).join('')}</div>
+        <div class="set-row bg-image-row" style="border:0"><div><b>Your picture</b><small>Kept on this device only.</small></div><label class="btn small">Choose a picture<input type="file" accept="image/*" data-bg-upload hidden></label></div>
+        <div class="bg-title-row"><div class="field">${icon('search')}<input data-bg-search placeholder="Search a show, movie or book" autocomplete="off"></div><div class="bg-results" id="bg-results">${settings.look.pick?.title ? `<small>Using <b>${esc(settings.look.pick.title)}</b>.</small>` : ''}</div></div>
+        <div class="set-row bg-solid-row" style="border:0"><div><b>Colour</b><small>The whole background in this one colour.</small></div><label class="sky-picks"><input type="color" data-bg-solid value="${settings.look.solid || '#14111c'}"></label></div>
+        <div class="set-row bg-pal-row" style="display:block;border:0;padding-top:0"><div><b>Palette</b><small>Pick one, or set your own four colours below.</small></div><div class="palettes">${PALETTES.map(([k, l, c]) => `<button class="pal ${settings.look.preset === k ? 'on' : ''}" data-sky-preset="${k}" title="${l}"><span style="background:radial-gradient(circle at 30% 30%,${c[3]},transparent 45%),radial-gradient(circle at 75% 70%,${c[2]},transparent 60%),linear-gradient(135deg,${c[1]},${c[0]})"></span>${l}</button>`).join('')}</div>
         <div class="sky-picks">${['Base', 'Cloud one', 'Cloud two', 'Light'].map((l, i) => `<label><input type="color" data-sky="${i}" value="${skyColors()[i]}">${l}</label>`).join('')}</div></div>`)}`)}
     ${pane('servers', 'Servers', "Each card is one server, yours or a friend's. Connect its Jellyfin, Kavita and request sites and everything shows up together, marked with where it's from.", `<div class="srv-cards">${groups.list().map(srvCard).join('')}
       <button class="srv-add" data-group-add>${icon('plus')}<b>Add another server</b><small>A friend's Jellyfin, Kavita or request site</small></button></div>`)}
@@ -311,3 +346,27 @@ export function applyTheme() {
   applyAccent();
 }
 matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyTheme);
+
+// Picture backgrounds: upload, search and pick
+document.addEventListener('change', async (e) => {
+  const f = e.target.closest?.('[data-bg-upload]'); if (!f?.files?.[0]) return;
+  try { const url = await saveImage(f.files[0]); const pv = document.querySelector('.bgm-image'); if (pv) pv.style.backgroundImage = `url('${url}')`; applySky(); toast('Background updated', 'ok'); } catch (err) { toast(err.message, 'bad'); }
+  f.value = '';
+});
+let bgFind = 0;
+document.addEventListener('keydown', async (e) => {
+  const i = e.target.closest?.('[data-bg-search]'); if (!i || e.key !== 'Enter') return;
+  e.preventDefault(); const q = i.value.trim(); if (!q) return;
+  const box = document.getElementById('bg-results'); if (!box) return;
+  const n = ++bgFind; box.innerHTML = '<small>Searching…</small>';
+  const res = await findTitles(q); if (n !== bgFind) return;
+  box.innerHTML = res.length ? res.map((x, k) => `<button class="bg-hit" data-bg-pick="${k}"><span style="background-image:url('${esc(x.thumb)}')"></span><b>${esc(x.title)}</b><small>${esc(String(x.year || ''))}</small></button>`).join('') : '<small>Nothing found with a picture.</small>';
+  box._res = res;
+});
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-bg-pick]'); if (!b) return;
+  const x = document.getElementById('bg-results')?._res?.[Number(b.dataset.bgPick)]; if (!x) return;
+  settings.look = { ...settings.look, pick: { url: x.url, thumb: x.thumb, title: x.title, soft: !!x.soft } }; save(); applySky();
+  $$('.bg-hit').forEach((h) => h.classList.toggle('on', h === b));
+  const pv = document.querySelector('.bgm-title'); if (pv) pv.style.backgroundImage = `url('${x.thumb}')`;
+});
