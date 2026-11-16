@@ -21,6 +21,7 @@ function listTracks(item) {
 
 const root = () => $('#player');
 let S = null; // the current session
+const endsAt = (secs) => new Date(Date.now() + secs * 1000 / (S?.v?.playbackRate || 1)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 // Skip back / forward amounts (Settings > Playback), 1 to 60 seconds
 const clampSkip = (n, d) => Math.min(60, Math.max(1, Math.round(Number(n)) || d));
 const skipB = () => clampSkip(settings.playback.skipBack, 10), skipF = () => clampSkip(settings.playback.skipFwd, 10);
@@ -70,7 +71,7 @@ export async function play(item, { start, queue = [] } = {}) {
   }
   if (jf.linuxStream() && S.sub != null && !tr.subs.find((x) => x.index === S.sub)?.textBased) S.sub = null;
   S.subTextOk = S.sub == null || !!tr.subs.find((x) => x.index === S.sub)?.textBased;
-  S.forceTranscode = false;
+  S.forceTranscode = false; S.nativeHls = false;
   S.trackKnown = tr.audio.length + tr.subs.length > 0;
   document.body.classList.add('playing');
   build();
@@ -220,7 +221,8 @@ async function load(at = 0) {
       await pickNativeAudio();
     } catch (e) { if (S === session && session.loadEpoch === epoch && !nativeAbort.signal.aborted) return fail(e); return; }
   } else if (pb.hls) {
-    if (window.Hls?.isSupported()) {
+    // S.nativeHls: the player's own streaming (GStreamer on Linux) after the usual path couldn't decode it
+    if (window.Hls?.isSupported() && !S.nativeHls) {
       const hls = new window.Hls({ maxBufferLength: 60, backBufferLength: 60, startPosition: 0 });
       S.hls = hls;
       // Recover from a hiccup a couple of times, then say what went wrong instead of spinning forever
@@ -229,6 +231,11 @@ async function load(at = 0) {
         if (!d.fatal) return;
         if (d.type === 'networkError' && tries.net++ < 3) return void setTimeout(() => hls.startLoad(), 800 * tries.net);
         if (d.type === 'mediaError' && tries.media++ < 2) return void hls.recoverMediaError();
+        // Still can't decode (often HEVC or 10-bit video the system says it supports but can't play):
+        // ask the server to convert the picture to H.264 once and carry on from the same spot
+        if (d.type === 'mediaError' && !S.forceTranscode) { S.forceTranscode = true; toast('Converting this video so it can play here...'); return void load(pos()); }
+        // Still failing: on Linux, skip the in-page stream handling and let the system's own player stream it
+        if (d.type === 'mediaError' && desktop?.linuxStream && !S.nativeHls) { S.nativeHls = true; return void load(pos()); }
         fail(new Error(d.type === 'mediaError' ? `This device couldn't decode the stream (${d.details}).` : d.type === 'networkError' ? `The server stopped sending the stream (${d.details}${d.response?.code ? ` ${d.response.code}` : ''}).` : `The stream stopped (${d.details}).`));
       });
       // Nothing playing after a while: stop the endless spinner and explain
@@ -327,7 +334,7 @@ function tick() {
   if (!S) return;
   paintNativeSubtitles();
   const p = pos(), d = duration();
-  $('.pl-time', root()).textContent = `${fmtTime(p)} / ${fmtTime(d)}`;
+  $('.pl-time', root()).innerHTML = `${fmtTime(p)} / ${fmtTime(d)}${d > 60 && d - p > 30 ? `<em class="pl-ends">Ends ${endsAt(d - p)}</em>` : ''}`;
   $('.done', root()).style.width = d ? `${(p / d) * 100}%` : '0';
   $('.knob', root()).style.left = d ? `${(p / d) * 100}%` : '0';
   if (Date.now() - S.reported > 10000) report(false);
@@ -578,6 +585,8 @@ async function fail(e) {
   const source = S.pb?.source || S.item.MediaSources?.[0];
   // The original file wouldn't decode here: try once more through the server's repackaged stream
   if ((e?.code === 3 || e?.code === 4) && !S.useStream && !S.pb?.hls) { S.useStream = true; return load(pos()); }
+  // Nothing else played: as the last resort have the server convert it fully (H.264 + AAC), like Jellyfin's own apps do
+  if (!S.forceTranscode && !/not allowed|conversion turned off|signed in|401|403/i.test(e?.message || '')) { S.forceTranscode = true; S.nativeHls = false; toast('Converting this video so it can play here...'); return load(pos()); }
   const details = playbackFailure(e, native?.platform, source);
   // Keep failures local and actionable without requesting server conversion.
   const el = root();
@@ -615,7 +624,7 @@ document.addEventListener('keydown', (e) => {
   if (!S || /input|select|textarea/i.test(e.target.tagName)) return;
   const k = e.key.toLowerCase();
   const map = {
-    ' ': toggle, k: toggle, arrowleft: () => seekBy(e.shiftKey ? -skipB() * 3 : -skipB()), arrowright: () => seekBy(e.shiftKey ? skipF() * 3 : skipF()), j: () => seekBy(-10), l: () => seekBy(10),
+    '?': () => shortcuts(), ' ': toggle, k: toggle, arrowleft: () => seekBy(e.shiftKey ? -skipB() * 3 : -skipB()), arrowright: () => seekBy(e.shiftKey ? skipF() * 3 : skipF()), j: () => seekBy(-10), l: () => seekBy(10),
     arrowup: () => { S.v.volume = Math.min(1, S.v.volume + 0.05); flash(`${Math.round(S.v.volume * 100)}%`); }, arrowdown: () => { S.v.volume = Math.max(0, S.v.volume - 0.05); flash(`${Math.round(S.v.volume * 100)}%`); },
     f: () => fullscreen(), m: () => (desktop ? mini() : (setAudioMuted(S.v, !audioMuted(S.v)))), p: pip, c: () => menu('subs'), n: nextEpisode, escape: () => (S.menu ? menu(S.menu) : document.body.classList.contains('mini') ? mini(false) : document.body.classList.contains('fullscreen') ? fullscreen(false) : close()),
     '>': () => { const i = SPEEDS.indexOf(S.v.playbackRate); S.v.playbackRate = SPEEDS[Math.min(SPEEDS.length - 1, i + 1)]; flash(`${S.v.playbackRate}x`); }, '<': () => { const i = SPEEDS.indexOf(S.v.playbackRate); S.v.playbackRate = SPEEDS[Math.max(0, i - 1)]; flash(`${S.v.playbackRate}x`); },
@@ -640,3 +649,21 @@ const pipCard = () => {
 document.addEventListener('enterpictureinpicture', () => { const el = root(); if (!el || $('.pl-pip', el)) return; el.classList.add('in-pip'); const ui = $('.pl-ui', el); (ui || el).insertAdjacentHTML(ui ? 'beforebegin' : 'beforeend', pipCard()); }, true);
 document.addEventListener('leavepictureinpicture', () => { const el = root(); el?.classList.remove('in-pip'); $('.pl-pip', el || document)?.remove(); }, true);
 document.addEventListener('click', (e) => { if (e.target.closest('[data-pip-back]')) { e.stopPropagation(); document.exitPictureInPicture?.().catch(() => {}); } }, true);
+
+// Scroll on the volume control to change the volume
+document.addEventListener('wheel', (e) => {
+  const vol = e.target.closest?.('#player .pl-vol'); if (!vol || !S?.v) return;
+  e.preventDefault();
+  const v = S.v; if (audioMuted(v)) setAudioMuted(v, false);
+  v.volume = Math.min(1, Math.max(0, Math.round((v.volume - Math.sign(e.deltaY) * 0.05) * 100) / 100));
+  paintVolume(); flash(`Volume ${Math.round(v.volume * 100)}%`);
+}, { passive: false });
+
+// "?" in the player: every keyboard shortcut in one place
+function shortcuts() {
+  const el = root(); if (!el) return;
+  const open = $('.pl-keys', el); if (open) return open.remove();
+  const rows = [['Space / K', 'Play or pause'], ['← / →', `Back ${skipB()}s / forward ${skipF()}s`], ['Shift + ← / →', 'Jump three times as far'], ['J / L', 'Back / forward 10s'], ['↑ / ↓', 'Volume'], ['F', 'Fullscreen'], ['M', desktop ? 'Mini player' : 'Mute'], ['P', 'Picture-in-picture'], ['C', 'Subtitles'], ['N', 'Next episode'], ['< / >', 'Slower / faster'], ['Esc', 'Close menu or leave fullscreen'], ['?', 'Show or hide this list']];
+  el.insertAdjacentHTML('beforeend', `<div data-air-video-controls class="pl-keys" role="dialog" aria-label="Keyboard shortcuts"><div class="pl-keys-card"><b>Keyboard shortcuts</b><dl>${rows.map(([k, d]) => `<dt>${k.split(' / ').map((x) => `<kbd>${esc(x)}</kbd>`).join(' ')}</dt><dd>${esc(d)}</dd>`).join('')}</dl><button class="btn" data-keys-close>Close</button></div></div>`);
+}
+document.addEventListener('click', (e) => { const k = e.target.closest('.pl-keys'); if (k && (e.target === k || e.target.closest('[data-keys-close]'))) { e.stopPropagation(); k.remove(); } }, true);

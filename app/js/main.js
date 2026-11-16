@@ -1,5 +1,5 @@
 // Starts the app: title bar, top bar, routes and global shortcuts.
-import { $, $$, esc, icon, render, go, current, settings, save, desktop, on, toast, serverLoading } from './core.js';
+import { $, $$, esc, icon, render, go, current, settings, save, desktop, on, toast, serverLoading, groups, gsuf } from './core.js';
 import * as jf from './jellyfin.js';
 import * as kv from './kavita.js';
 import * as rq from './requests.js';
@@ -271,3 +271,67 @@ document.addEventListener('keydown', (e) => {
   if (!e.altKey || e.ctrlKey || e.metaKey || e.target.closest?.('input,textarea')) return;
   if (e.key === 'ArrowLeft') { e.preventDefault(); history.back(); } else if (e.key === 'ArrowRight') { e.preventDefault(); history.forward(); }
 });
+
+
+// Live results under the search bar: what's already on your servers, as you type.
+// Up and down to move, Enter opens the highlighted one (or the full results if none is), Esc closes.
+(() => {
+  let n = 0, timer = 0, hits = [], sel = -1;
+  const box = () => $('#live-search');
+  const close = () => { box()?.remove(); hits = []; sel = -1; };
+  const kindOf = (t) => (t === 'Movie' ? 'Movie' : t === 'Series' ? 'Show' : 'Book');
+  async function find(q) {
+    const out = [];
+    await Promise.all([
+      ...groups.with('jellyfin').map(async (g) => {
+        try {
+          const r = await groups.run(g, () => jf.search(q, 'Movie,Series'));
+          for (const it of groups.tag(g, r?.Items || []).slice(0, 8)) out.push({ key: `${it.Type}|${it.Name}|${it.ProductionYear || ''}`.toLowerCase(), title: it.Name, year: it.ProductionYear || '', kind: kindOf(it.Type), rating: it.CommunityRating ? Math.round(it.CommunityRating * 10) / 10 : null, count: it.Type === 'Series' ? it.ChildCount : null, pic: jf.img(it, 'Primary', 120), href: `#/item/${it.Id}${gsuf(it)}`, from: [groups.nameOf(g)], played: !!it.UserData?.Played });
+        } catch {}
+      }),
+      ...groups.with('kavita').map(async (g) => {
+        try {
+          const r = await groups.run(g, () => kv.search(q));
+          for (const x of (r?.series || []).slice(0, 6)) { const sx = groups.tag(g, [{ id: x.seriesId }])[0]; out.push({ key: `book|${x.name}`.toLowerCase(), title: x.name, year: '', kind: 'Book', rating: null, count: null, pic: kv.cover(x.seriesId, g.id), href: `#/series/${x.seriesId}${gsuf(sx)}`, from: [groups.nameOf(g)], played: false }); }
+        } catch {}
+      }),
+    ]);
+    // One row per title, listing every server that has it
+    const by = new Map();
+    for (const h of out) { const o = by.get(h.key); if (o) { for (const f of h.from) if (!o.from.includes(f)) o.from.push(f); } else by.set(h.key, h); }
+    const ql = q.toLowerCase();
+    return [...by.values()].sort((a, b) => (b.title.toLowerCase().startsWith(ql) - a.title.toLowerCase().startsWith(ql))).slice(0, 8);
+  }
+  const paint = (q) => {
+    const form = $('#top-search'); if (!form) return;
+    $('#recent-searches')?.remove();
+    let el = box(); if (!el) { form.insertAdjacentHTML('beforeend', '<div id="live-search" class="live-search" role="listbox"></div>'); el = box(); }
+    el.innerHTML = hits.length ? hits.map((h, i) => `<a class="ls-row${i === sel ? ' on' : ''}" href="${esc(h.href)}" data-ls="${i}" role="option"><span class="ls-pic">${h.pic ? `<img src="${esc(h.pic)}" alt="" loading="lazy">` : ''}</span><span class="ls-txt"><b>${esc(h.title)}</b><span class="ls-chips">${h.year ? `<i>${esc(String(h.year))}</i>` : ''}<i>${h.kind}</i>${h.count ? `<i>${h.count} season${h.count > 1 ? 's' : ''}</i>` : ''}${h.rating ? `<i>${icon('star')}${h.rating}</i>` : ''}${h.played ? '<i class="ok">Watched</i>' : ''}<i class="from">on ${esc(h.from.join(' + '))}</i></span></span></a>`).join('')
+      + '<div class="ls-foot"><span>↑ ↓ to move</span><span>Enter to open</span><span>Esc to close</span></div>'
+      : `<div class="ls-empty">Nothing on your servers matches “${esc(q)}”. Press Enter to search everywhere.</div>`;
+  };
+  document.addEventListener('input', (e) => {
+    if (!e.target.matches?.('#top-search input')) return;
+    const q = e.target.value.trim(); clearTimeout(timer);
+    if (q.length < 2) { close(); return; }
+    timer = setTimeout(async () => { const k = ++n; const r = await find(q); if (k !== n || e.target.value.trim() !== q) return; hits = r; sel = -1; paint(q); }, 220);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (!e.target.matches?.('#top-search input') || !box()) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault(); if (!hits.length) return;
+      sel = e.key === 'ArrowDown' ? (sel + 1) % hits.length : (sel <= 0 ? hits.length - 1 : sel - 1);
+      $$('#live-search .ls-row').forEach((r, i) => r.classList.toggle('on', i === sel));
+      $$('#live-search .ls-row')[sel]?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter' && sel >= 0 && hits[sel]) {
+      e.preventDefault(); const h = hits[sel]; rememberSearch(e.target.value.trim()); close(); e.target.blur(); location.hash = h.href;
+    } else if (e.key === 'Escape') close();
+  }, true);
+  document.addEventListener('mousedown', (e) => {
+    const r = e.target.closest?.('#live-search [data-ls]');
+    if (r) { e.preventDefault(); const h = hits[Number(r.dataset.ls)]; const inp = $('#top-search input'); if (inp) { rememberSearch(inp.value.trim()); inp.blur(); } close(); if (h) location.hash = h.href; return; }
+    if (!e.target.closest?.('#top-search')) close();
+  });
+  document.addEventListener('submit', (e) => { if (e.target.id === 'top-search') close(); }, true);
+  addEventListener('hashchange', close);
+})();

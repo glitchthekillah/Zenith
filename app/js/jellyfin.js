@@ -153,7 +153,9 @@ function deviceProfile() {
 // an HLS stream. The video is copied as is (never re-encoded); audio is copied when this engine can
 // decode it, otherwise converted to AAC. Playback stays inside the app window.
 export const linuxStream = () => !!globalThis.zenithDesktop?.linuxStream;
-function streamProfile() {
+// full: the last resort when nothing else plays, H.264 picture and AAC sound in plain TS segments,
+// the most widely playable thing the server can make (the same fallback Jellyfin's own apps use)
+function streamProfile(full = false) {
   const ok = (m) => { try { return MediaSource.isTypeSupported(m); } catch { return false; } };
   const video = [['h264','video/mp4; codecs="avc1.640028"'],['hevc','video/mp4; codecs="hvc1.2.4.L120.90"'],['av1','video/mp4; codecs="av01.0.08M.10"']].filter(([,m])=>ok(m)).map(([c])=>c);
   const audio = [['aac','audio/mp4; codecs="mp4a.40.2"'],['ac3','audio/mp4; codecs="ac-3"'],['eac3','audio/mp4; codecs="ec-3"'],['mp3','audio/mp4; codecs="mp3"'],['opus','audio/mp4; codecs="opus"'],['flac','audio/mp4; codecs="flac"']].filter(([,m])=>ok(m)).map(([c])=>c);
@@ -161,28 +163,32 @@ function streamProfile() {
   const safeAudio = linuxStream() ? audio.filter((c) => c === 'aac' || c === 'mp3') : audio;
   return {
     MaxStreamingBitrate: 2_000_000_000, MaxStaticBitrate: 2_000_000_000, DirectPlayProfiles: [], ContainerProfiles: [], CodecProfiles: [],
-    TranscodingProfiles: [{Container:'mp4',Type:'Video',Protocol:'hls',VideoCodec:video.join(','),AudioCodec:safeAudio.join(',')||'aac',Context:'Streaming',MinSegments:1,BreakOnNonKeyFrames:true}],
+    TranscodingProfiles: [{Container:full ? 'ts' : 'mp4',Type:'Video',Protocol:'hls',VideoCodec:(full ? ['h264'] : video).join(','),AudioCodec:full ? 'aac' : safeAudio.join(',')||'aac',Context:'Streaming',MinSegments:1,BreakOnNonKeyFrames:true,MaxAudioChannels:'6'}],
     SubtitleProfiles: ['vtt','srt','ass','ssa','subrip'].map(Format=>({Format,Method:'External'})),
   };
 }
 const VIDEO_REASONS = /Video|Resolution|Bitrate|Framerate|Level|Profile|RefFrames|Anamorphic|Interlaced|BitDepth|Range/i;
-async function streamPlayback(id, { audioIndex, start = 0, sourceId } = {}) {
-  const body = { UserId: S().userId, DeviceProfile: streamProfile(), StartTimeTicks: Math.round(start * 1e7), AutoOpenLiveStream: false, MediaSourceId: sourceId || undefined,
-    EnableDirectPlay: false, EnableDirectStream: false, EnableTranscoding: true, AllowVideoStreamCopy: true, AllowAudioStreamCopy: true,
-    ...(audioIndex != null ? {AudioStreamIndex:audioIndex} : {}) };
+async function streamPlayback(id, { audioIndex, start = 0, sourceId, full = false, maxBitrate } = {}) {
+  const body = { UserId: S().userId, DeviceProfile: streamProfile(full), StartTimeTicks: Math.round(start * 1e7), AutoOpenLiveStream: false, MediaSourceId: sourceId || undefined,
+    EnableDirectPlay: false, EnableDirectStream: false, EnableTranscoding: true, AllowVideoStreamCopy: !full, AllowAudioStreamCopy: !full,
+    ...(full ? { MaxStreamingBitrate: maxBitrate || 20_000_000 } : {}), ...(audioIndex != null ? {AudioStreamIndex:audioIndex} : {}) };
   const info = await api(`/Items/${id}/PlaybackInfo?UserId=${S().userId}`, { method: 'POST', body });
   if (info.ErrorCode) throw new Error(info.ErrorCode === 'NotAllowed' ? "You're not allowed to play this." : `The server can't play this (${info.ErrorCode}).`);
   const src = info.MediaSources?.[0];
   if (!src) throw new Error('This item has no playable file.');
   const reasons = (src.TranscodeReasons || []).filter((r) => VIDEO_REASONS.test(r) && !/Audio/i.test(r));
-  if (!src.TranscodingUrl || reasons.length) {
+  if (!src.TranscodingUrl || (reasons.length && !full)) {
     const v = (src.MediaStreams || []).find((s) => s.Type === 'Video');
-    throw new Error(`This file's video (${v?.Codec || 'unknown'}) can't play here without the server re-encoding it, and that's turned off.`);
+    throw new Error(full ? `The server wouldn't convert this file (${v?.Codec || 'unknown'}). Its owner may have conversion turned off for your account.` : `This file's video (${v?.Codec || 'unknown'}) can't play here without the server re-encoding it.`);
   }
-  return finish(id, info, src, S().url + src.TranscodingUrl, true, 'Direct stream');
+  // Say what the server is actually doing: repackaging only, converting the sound, or converting everything
+  const all = src.TranscodeReasons || [], audioConv = all.some((r) => /Audio/i.test(r));
+  const method = full || reasons.length ? 'Transcoding (video and audio)' : audioConv ? 'Transcoding (audio only)' : 'Direct stream';
+  return finish(id, info, src, S().url + src.TranscodingUrl, true, method);
 }
 
 export async function playback(id, { audioIndex, subIndex, start = 0, maxBitrate, forceTranscode = false, sourceId, clientAudio = false, burnSub = false, stream = false } = {}) {
+  if (forceTranscode) return streamPlayback(id, { audioIndex, start, sourceId, full: true, maxBitrate });
   if (linuxStream() || stream) {
     return streamPlayback(id, { audioIndex, start, sourceId });
   }
