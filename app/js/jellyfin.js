@@ -100,6 +100,11 @@ export function img(it, type = 'Primary', w = 400) {
     if (it.ParentBackdropImageTags?.length) return `${base}/Items/${it.ParentBackdropItemId}/Images/Backdrop?tag=${it.ParentBackdropImageTags[0]}&maxWidth=${w}&quality=85`;
     return '';
   }
+  if (type === 'Logo') {
+    if (it.ImageTags?.Logo) return `${base}/Items/${it.Id}/Images/Logo?tag=${it.ImageTags.Logo}&maxWidth=${w}&quality=90`;
+    if (it.ParentLogoImageTag && it.ParentLogoItemId) return `${base}/Items/${it.ParentLogoItemId}/Images/Logo?tag=${it.ParentLogoImageTag}&maxWidth=${w}&quality=90`;
+    return '';
+  }
   if (type === 'Thumb') {
     if (it.ImageTags?.Thumb) return `${base}/Items/${it.Id}/Images/Thumb?tag=${it.ImageTags.Thumb}&maxWidth=${w}&quality=85`;
     if (it.Type === 'Episode' && it.ImageTags?.Primary) return `${base}/Items/${it.Id}/Images/Primary?tag=${it.ImageTags.Primary}&maxWidth=${w}&quality=85`;

@@ -14,7 +14,7 @@ export const known = (id, group = groups.active().id) => cache.get(cacheKey(id, 
 // Ask every connected server (each group) and tag the results with where they came from
 const fromAll = async (kind, fn) => (await Promise.all(groups.with(kind).map((g) => Promise.resolve().then(() => groups.run(g, fn)).then((x) => groups.tag(g, Array.isArray(x) ? x : x?.Items || [])).catch(() => [])))).flat();
 const inGroup = (x, fn) => (x?._g ? groups.run(groups.byId(x._g), fn) : fn());
-const fromPill = (x, kind = 'jellyfin') => { if (!x?._g || !groups.many(kind)) return ''; const n = x._copies?.length > 1 ? placeNames(x) : [groups.nameOf(groups.byId(x._g))]; return `<span class="from-pill${n.length > 1 ? ' multi' : ''}">${n.length > 1 ? `on ${esc(n.join(' + '))}` : `from ${esc(n[0])}`}</span>`; };
+const fromPill = (x, kind = 'jellyfin') => { if (!x?._g || !groups.many(kind)) return ''; const n = x._copies?.length > 1 ? placeNames(x) : [groups.nameOf(groups.byId(x._g))]; return `<span class="from-pill${n.length > 1 ? ' multi' : ''}">${n.length > 1 ? (n.length >= 3 ? `on ${n.length} servers` : `on ${esc(n.join(' + '))}`) : `from ${esc(n[0])}`}</span>`; };
 const recent = (a, b) => Date.parse(b.UserData?.LastPlayedDate || 0) - Date.parse(a.UserData?.LastPlayedDate || 0);
 
 // ── The same title on more than one server ────────────────────────────
@@ -56,7 +56,29 @@ const placeNames = (x) => [...new Set((x._copies || [x]).map((c) => groups.nameO
 // Posters: episodes and seasons show their show's poster and name (episode stills look
 // like random screenshots in a poster grid). Wide cards keep the episode's own picture.
 const seriesPoster = (it, w) => it.SeriesPrimaryImageTag ? `${(it._g && groups.byId(it._g)?.servers.jellyfin || settings.servers.jellyfin || groups.srv('jellyfin')).url}/Items/${it.SeriesId}/Images/Primary?tag=${it.SeriesPrimaryImageTag}&maxWidth=${w}&quality=88` : '';
-export function card(it, { wide = false, badge = '', asShow = false, kindBadge = false } = {}) {
+// Library tiles: the server's own artwork usually has the name baked in (and clashes with ours),
+// so each tile is built from what's inside: a backdrop plus a fan of posters, same look on every server.
+const LIB_ORDER = { movies: 0, tvshows: 1, mixed: 2, homevideos: 3, boxsets: 4 };
+function libTiles(libs, latest) {
+  if (!libs.length) return '';
+  const many = groups.many('jellyfin');
+  const sorted = [...libs].sort((a, b) => (LIB_ORDER[a.CollectionType] ?? 9) - (LIB_ORDER[b.CollectionType] ?? 9) || String(a.Name).localeCompare(b.Name));
+  const tile = (v) => {
+    const items = latest.get(`${v._g}:${v.Id}`)?.items || [];
+    const art = items.map((i) => jf.img(i, 'Backdrop', 780)).find(Boolean);
+    const posters = items.map((i) => (i.Type === 'Episode' || i.Type === 'Season' ? seriesPoster(i, 220) : jf.img(i, 'Primary', 220))).filter(Boolean).filter((x, n, a) => a.indexOf(x) === n).slice(0, 3);
+    const kind = v.CollectionType === 'movies' ? 'film' : v.CollectionType === 'boxsets' ? 'stack' : /anime/i.test(v.Name) ? 'spark' : v.CollectionType === 'tvshows' ? 'tv' : 'grid';
+    const label = { movies: 'Movies', tvshows: 'Shows', boxsets: 'Collections', homevideos: 'Videos' }[v.CollectionType] || 'Library';
+    const sub = [String(v.Name).toLowerCase() === label.toLowerCase() ? '' : label, many ? groups.nameOf(groups.byId(v._g)) : ''].filter(Boolean).join(' · ');
+    return `<a class="libtile k-${kind}" href="#/library/${v.Id}${gsuf(v)}">
+      <span class="lt-bg">${art ? `<img loading="lazy" src="${esc(art)}" alt="">` : ''}</span>
+      ${posters.length ? `<span class="lt-fan">${posters.map((p, n) => `<img loading="lazy" src="${esc(p)}" alt="" style="--n:${n}">`).join('')}</span>` : ''}
+      <span class="lt-text"><span class="lt-ic">${icon(kind)}</span><span><b>${esc(v.Name)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span></span>
+    </a>`;
+  };
+  return `<section class="row"><div class="row-head"><h3>Your libraries</h3></div><div class="libtiles">${sorted.map(tile).join('')}</div></section>`;
+}
+export function card(it, { wide = false, badge = '', asShow = false, kindBadge = false, dismiss = false } = {}) {
   const ep = it.Type === 'Episode', season = it.Type === 'Season';
   const pic = wide ? jf.img(it, 'Thumb', 480) : ep ? seriesPoster(it, 300) || jf.img(it, 'Primary', 300) : season ? jf.img(it, 'Primary', 300) || seriesPoster(it, 300) : jf.img(it, 'Primary', 300);
   const pct = it.UserData?.PlayedPercentage;
@@ -71,7 +93,7 @@ export function card(it, { wide = false, badge = '', asShow = false, kindBadge =
     <div class="art${wide ? ' wide' : ''}">${pic ? `<img loading="lazy" src="${esc(pic)}" alt="">` : `<div class="ph">${esc(title)}</div>`}
       ${badge ? `<span class="badge amber">${esc(badge)}</span>` : ''}
       ${it.UserData?.Played ? `<span class="check">${icon('check')}</span>` : unplayed ? `<span class="badge right pink">${unplayed}</span>` : ''}
-      ${kindBadge ? typeBadge(it.Type === 'BoxSet' ? 'collection' : kindOf(it)) : ''}${pct ? `<span class="bar"><i style="width:${pct}%"></i></span>` : ''}${fromPill(it)}
+      ${kindBadge ? typeBadge(it.Type === 'BoxSet' ? 'collection' : kindOf(it)) : ''}${pct ? `<span class="bar"><i style="width:${pct}%"></i></span>` : ''}${fromPill(it)}${dismiss ? `<span class="card-x" data-unresume="${it.Id}" role="button" title="Remove from Continue watching" aria-label="Remove from Continue watching">${icon('x')}</span>` : ''}
       ${['Movie', 'Episode'].includes(it.Type) || asShow ? `<span class="play-over"><span data-play="${playId}" title="Play">${icon('play')}</span></span>` : ''}
     </div><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</a>`;
 }
@@ -109,10 +131,15 @@ route('home', () => defer(async (publish, alive) => {
       }));
     };
     let becauseId = '';
+    // My list: everything you've hearted, newest first (Netflix-style)
+    tasks.push(stream(() => jf.items({ filters: 'IsFavorite', types: 'Movie,Series', sort: 'DateCreated', order: 'Descending', limit: 30 }), (list) => {
+      if (!alive()) return;
+      add(2.5, shelf('My list', merge(list).map((i) => card(i)).join('')));
+    }));
     tasks.push(stream(() => jf.resume(20), (list) => {
       const resume = remember(merge(list.sort(recent)).slice(0, 24));
       stats.resume = resume.length; resumeTop = resume[0] || resumeTop;
-      add(2, shelf('Continue watching', resume.map((i) => card(i, { wide: true })).join(''), '', true));
+      add(2, shelf('Continue watching', resume.map((i) => card(i, { wide: true, dismiss: true })).join(''), '', true));
       const seed = resume[0];
       if (seed && !becauseId) {
         becauseId = seed.SeriesId || seed.Id;
@@ -144,11 +171,12 @@ route('home', () => defer(async (publish, alive) => {
       const libs = groups.tag(owner, views.filter((v) => ['movies', 'tvshows', 'boxsets', 'homevideos', 'mixed', undefined].includes(v.CollectionType)));
       libraries.set(owner.id, libs);
       const allLibs = [...libraries.values()].flat();
-      add(3, allLibs.length ? `<section class="row"><div class="row-head"><h3>Your libraries</h3></div><div class="libtiles">${allLibs.map((v) => `<a class="libtile" href="#/library/${v.Id}${gsuf(v)}">${jf.img(v, 'Primary', 600) ? `<img loading="lazy" src="${esc(jf.img(v, 'Primary', 600))}" alt="">` : ''}<span>${esc(v.Name)}${groups.many('jellyfin') ? `<small>${esc(groups.nameOf(groups.byId(v._g)))}</small>` : ''}</span></a>`).join('')}</div></section>` : '');
+      add(3, libTiles(allLibs, latest));
       await Promise.all(libs.slice(0, 8).map(async (v) => {
         const items = remember(groups.tag(owner, await groups.run(owner, () => jf.latest(v.Id, 18)).catch(() => [])));
         if (!alive()) return;
         latest.set(`${owner.id}:${v.Id}`, { v, items });
+        add(3, libTiles([...libraries.values()].flat(), latest));
         const rows = new Map();
         for (const x of latest.values()) {
           const key = `${x.v.CollectionType}|${String(x.v.Name).toLowerCase()}`;
@@ -185,29 +213,70 @@ function greeting(st, resumeTop, shuffle) {
   const name = settings.profile?.name || settings.servers.jellyfin?.name || settings.servers.kavita?.name || '';
   const chips = [[st.resume, 'in progress', '#/home'], [st.next, 'up next', '#/shows'], [st.read, 'to keep reading', '#/read'], [st.ready, st.ready === 1 ? 'request ready' : 'requests ready', '#/request']].filter(([n]) => n);
   const pick = shuffle.length ? shuffle[0] : null;
-  return `<section class="hello"><a class="hello-pic" href="#/settings" title="Change your picture">${avatarHtml(name || '?')}</a>
+  const bg = resumeTop && (jf.img(resumeTop, 'Backdrop', 1280) || jf.img(resumeTop, 'Thumb', 1280));
+  return `<section class="hello">${bg ? `<span class="hello-bg"><img src="${esc(bg)}" alt=""></span>` : ''}<a class="hello-pic" href="#/settings" title="Change your picture">${avatarHtml(name || '?')}</a>
     <div class="hello-text"><span class="kicker">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }))}</span><h1>${hi}${name ? `, <em>${esc(name)}</em>` : ''}</h1>
       ${chips.length ? `<div class="hello-stats">${chips.map(([n, l, href]) => `<a href="${href}"><b>${n}</b>${esc(l)}</a>`).join('')}</div>` : ''}</div>
-    <div class="hello-acts">${resumeTop ? `<button class="btn gold hello-resume" data-play="${resumeTop.Id}" data-g="${esc(resumeTop._g)}">${icon('play')}<span class="hello-resume-title">Resume ${esc(resumeTop.SeriesName || resumeTop.Name)}</span></button>` : ''}${pick ? `<button class="btn" data-play="${pick.Id}" data-g="${esc(pick._g)}" title="${esc(pick.Name)}">${icon('shuffle')} Surprise me</button>` : ''}</div></section>`;
+    <div class="hello-acts">${resumeTop ? resumeCard(resumeTop) : ''}${pick ? `<button class="btn hello-surprise" data-play="${pick.Id}" data-g="${esc(pick._g)}" title="${esc(pick.Name)}">${icon('shuffle')} Surprise me</button>` : ''}</div></section>`;
+}
+// The "pick up where you left off" card in the greeting: picture, progress and time left
+function resumeCard(it) {
+  const ep = it.Type === 'Episode';
+  const pic = jf.img(it, 'Thumb', 480) || jf.img(it, 'Backdrop', 480) || jf.img(it, 'Primary', 300);
+  const pct = it.UserData?.PlayedPercentage || 0;
+  const left = it.RunTimeTicks ? Math.max(1, Math.round((it.RunTimeTicks - (it.UserData?.PlaybackPositionTicks || 0)) / 6e8)) : 0;
+  const sub = [ep ? `S${it.ParentIndexNumber ?? '?'} E${it.IndexNumber ?? '?'}` : it.ProductionYear, left ? `${left >= 60 ? `${Math.floor(left / 60)}h ${left % 60}m` : `${left}m`} left` : ''].filter(Boolean).join(' · ');
+  return `<button class="hello-resume" data-play="${it.Id}" data-g="${esc(it._g)}" title="Resume ${esc(it.SeriesName || it.Name)}">
+    <span class="hr-art">${pic ? `<img src="${esc(pic)}" alt="">` : ''}<span class="hr-play">${icon('play')}</span>${pct ? `<span class="bar"><i style="width:${pct}%"></i></span>` : ''}</span>
+    <span class="hr-text"><small>Continue watching</small><b>${esc(ep ? it.SeriesName || it.Name : it.Name)}</b>${sub ? `<span>${esc(sub)}</span>` : ''}</span>
+  </button>`;
 }
 function hero(list) {
   if (!list.length) return '';
-  const slides = list.map((it, i) => `<div class="hero-slide" data-g="${esc(it._g || groups.active().id)}" data-i="${i}" ${i ? 'hidden inert aria-hidden="true"' : 'aria-hidden="false"'}>
-    <div class="hero-in"><span class="kicker">New on ${esc(groups.nameOf(groups.byId(it._g) || groups.active()))}</span><h2>${esc(it.Type === 'Episode' ? it.SeriesName : it.Name)}</h2><div class="meta">${[it.ProductionYear, it.OfficialRating, fmtRuntime(it.RunTimeTicks), it.CommunityRating ? `${it.CommunityRating.toFixed(1)} rating` : '', (it.Genres || []).slice(0, 2).join(', ')].filter(Boolean).map(esc).join('<span>·</span>')}</div><p>${esc(it.Overview)}</p><div class="acts"><button class="btn gold big" data-play="${it.SeriesId || it.Id}">${icon('play')} Play</button><a class="btn big" href="#/item/${it.SeriesId || it.Id}${gsuf(it)}">More info</a></div></div>
-    <div class="hero-art"><img src="${esc(jf.img(it, 'Backdrop', 1600))}" alt=""></div></div>`).join('');
-  return `<section class="hero hero-split" id="hero">${slides}<div class="hero-dots">${list.map((_, i) => `<button data-hero="${i}" class="${i ? '' : 'on'}" aria-label="Slide ${i + 1}"></button>`).join('')}</div></section>`;
+  const slides = list.map((it, i) => {
+    const title = it.Type === 'Episode' ? it.SeriesName : it.Name;
+    const bg = jf.img(it, 'Backdrop', 2560), logo = jf.img(it, 'Logo', 700);
+    const meta = [it.ProductionYear, it.OfficialRating ? `<span class="rated">${esc(it.OfficialRating)}</span>` : '', fmtRuntime(it.RunTimeTicks), it.CommunityRating ? `<span class="star">${icon('star')}${it.CommunityRating.toFixed(1)}</span>` : '', (it.Genres || []).slice(0, 2).join(', ')]
+      .filter(Boolean).map((x) => (String(x).startsWith('<span') ? x : esc(x))).join('<i class="dot"></i>');
+    return `<div class="hero-slide" data-g="${esc(it._g || groups.active().id)}" data-i="${i}" ${i ? 'hidden inert aria-hidden="true"' : 'aria-hidden="false"'}>
+    <div class="hero-in"><span class="kicker">New on ${esc(groups.nameOf(groups.byId(it._g) || groups.active()))}</span>
+      ${logo ? `<h2 class="hero-logo"><img src="${esc(logo)}" alt="${esc(title)}"></h2>` : `<h2>${esc(title)}</h2>`}
+      <div class="meta">${meta}</div><p>${esc(it.Overview || '')}</p>
+      <div class="acts"><button class="btn gold big" data-play="${it.SeriesId || it.Id}"${it._g ? ` data-g="${esc(it._g)}"` : ''}>${icon('play')} Play</button><a class="btn big" href="#/item/${it.SeriesId || it.Id}${gsuf(it)}">More info</a><button class="icon-btn big hero-fav ${it.UserData?.IsFavorite ? 'on' : ''}" data-fav="${it.SeriesId || it.Id}" title="My list" aria-label="Add to My list">${icon('heart')}</button></div>
+    </div>
+    <div class="hero-art">${bg ? `<img src="${esc(bg)}" alt="">` : ''}</div></div>`;
+  }).join('');
+  const many = list.length > 1;
+  return `<section class="hero hero-split" id="hero" tabindex="-1" aria-roledescription="carousel">${slides}${many ? `<button class="hero-nav prev" data-hero-step="-1" aria-label="Previous">${icon('back')}</button><button class="hero-nav next" data-hero-step="1" aria-label="Next">${icon('next')}</button><div class="hero-dots">${list.map((_, i) => `<button data-hero="${i}" class="${i ? '' : 'on'}" aria-label="Slide ${i + 1}"><i></i></button>`).join('')}</div>` : ''}</section>`;
 }
 let heroTimer, boundHero;
+const HERO_MS = 9000;
 function bindHero() {
   const h = $('#hero'); if (h === boundHero) return;
-  boundHero = h; clearInterval(heroTimer);
+  boundHero = h; clearTimeout(heroTimer);
   if (!h) return;
   const slides = $$('.hero-slide', h);
   if (slides.length < 2) return;
-  let i = 0;
-  const show = (n) => { i = (n + slides.length) % slides.length; slides.forEach((s, k) => { s.hidden = k !== i; s.inert = k !== i; s.setAttribute('aria-hidden', String(k !== i)); }); $$('[data-hero]', h).forEach((b, k) => b.classList.toggle('on', k === i)); };
-  h.onclick = (e) => { const b = e.target.closest('[data-hero]'); if (b) { show(Number(b.dataset.hero)); clearInterval(heroTimer); } };
-  heroTimer = setInterval(() => { if (!document.hidden && !player.isOpen()) show(i + 1); }, 9000);
+  let i = 0, held = false, left = HERO_MS, started = Date.now();
+  const arm = () => { clearTimeout(heroTimer); started = Date.now(); heroTimer = setTimeout(() => { if (!document.hidden && !player.isOpen() && document.body.contains(h)) show(i + 1); else { left = HERO_MS; arm(); } }, left); };
+  const show = (n) => {
+    i = (n + slides.length) % slides.length;
+    slides.forEach((s, k) => { s.hidden = k !== i; s.inert = k !== i; s.setAttribute('aria-hidden', String(k !== i)); });
+    $$('[data-hero]', h).forEach((b, k) => { b.classList.remove('on'); if (k === i) { void b.offsetWidth; b.classList.add('on'); } });
+    left = HERO_MS; if (!held) arm();
+  };
+  // Hovering or focusing the banner holds the current slide (and its timer bar)
+  const hold = (on) => { if (held === on) return; held = on; h.classList.toggle('held', on); if (on) { clearTimeout(heroTimer); left = Math.max(800, left - (Date.now() - started)); } else arm(); };
+  h.onmouseenter = () => hold(true); h.onmouseleave = () => hold(h.contains(document.activeElement));
+  h.onfocusin = () => hold(true); h.onfocusout = (e) => { if (!h.contains(e.relatedTarget) && !h.matches(':hover')) hold(false); };
+  h.onkeydown = (e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); show(i + (e.key === 'ArrowRight' ? 1 : -1)); } };
+  h.onclick = (e) => {
+    const b = e.target.closest('[data-hero]'); if (b) return show(Number(b.dataset.hero));
+    const st = e.target.closest('[data-hero-step]'); if (st) return show(i + Number(st.dataset.heroStep));
+  };
+  // Swipe on touch screens
+  let x0 = null; h.ontouchstart = (e) => { x0 = e.touches[0].clientX; }; h.ontouchend = (e) => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); x0 = null; };
+  arm();
 }
 on('rendered', bindHero);
 on('patched', bindHero);
@@ -636,6 +705,13 @@ document.addEventListener('click', async (e) => {
   }
   const fromStart = e.target.closest('[data-play-start]');
   if (fromStart) { const it = known(fromStart.dataset.playStart) || await jf.item(fromStart.dataset.playStart); return player.play(it, { start: 0 }); }
+  const un = e.target.closest('[data-unresume]');
+  if (un) {
+    e.preventDefault(); e.stopPropagation();
+    const c = un.closest('.card');
+    try { await groups.run(groups.byId(c?.dataset.g) || groups.active(), () => jf.setWatched(un.dataset.unresume, false)); c?.remove(); toast('Removed from Continue watching', 'ok'); } catch (err) { toast(err.message, 'bad'); }
+    return;
+  }
   const w = e.target.closest('[data-watched]');
   if (w) {
     const on = !w.classList.contains('on');

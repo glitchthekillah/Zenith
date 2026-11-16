@@ -21,6 +21,16 @@ function listTracks(item) {
 
 const root = () => $('#player');
 let S = null; // the current session
+// Sleep timer (outlives a single episode) and the "still watching?" check after a run of autoplays
+const sleep = { mode: '', t: 0, until: 0 };
+let autoChain = 0;
+const STILL_AFTER = 3;
+function setSleep(mode) {
+  clearTimeout(sleep.t); sleep.mode = mode; sleep.until = 0;
+  if (/^\d+$/.test(mode)) { sleep.until = Date.now() + mode * 60000; sleep.t = setTimeout(() => { sleep.mode = ''; if (S && !S.v.paused) { S.v.pause(); flash('Sleep timer: paused'); } }, mode * 60000); }
+  flash(!mode ? 'Sleep timer off' : mode === 'end' ? 'Stops after this episode' : `Pausing in ${mode} min`);
+}
+const sleepLabel = () => sleep.mode === 'end' ? 'End of episode' : sleep.until ? `${Math.max(1, Math.round((sleep.until - Date.now()) / 60000))} min left` : 'Off';
 
 const SPEEDS = [0.5, 0.75, 1, 1.1, 1.25, 1.5, 1.75, 2];
 const QUALITIES = [[0, 'Original file · direct play']];
@@ -131,7 +141,7 @@ function build() {
   });
   v.addEventListener('enterpictureinpicture', () => $('[data-p=pip]', el).classList.add('on'));
   v.addEventListener('leavepictureinpicture', () => $('[data-p=pip]', el).classList.remove('on'));
-  el.ondblclick = (e) => { if (!e.target.closest('.pl-top,.pl-bottom,.pl-menu,.pl-next,.pl-skip,.pl-error,input,a')) fullscreen(); };
+  el.ondblclick = (e) => { if (!e.target.closest('.pl-top,.pl-bottom,.pl-menu,.pl-next,.pl-skip,.pl-error,.pl-still,input,a')) fullscreen(); };
   el.onclick = onClick;
   el.onmousemove = wake;
   el.ontouchstart = wake;
@@ -437,8 +447,13 @@ function discord() {
 }
 function ended() {
   report(true);
-  if (S.queue[0] && settings.playback.autoplayNext) nextEpisode();
-  else close();
+  if (sleep.mode === 'end') { sleep.mode = ''; return close(); }
+  if (!(S.queue[0] && settings.playback.autoplayNext)) return close();
+  if (++autoChain > STILL_AFTER) return stillWatching();
+  nextEpisode();
+}
+function stillWatching() {
+  root().insertAdjacentHTML('beforeend', `<div data-air-video-controls class="pl-still"><div class="pl-still-card"><b>Still watching?</b><small>Up next: ${esc(S.queue[0].Name || '')}</small><div class="pl-still-acts"><button class="btn gold" data-p="still-yes">${icon('play')}Keep watching</button><button class="btn" data-p="close">I'm done</button></div></div></div>`);
 }
 function showNext(next) {
   root().insertAdjacentHTML('beforeend', `<div data-air-video-controls class="pl-next"><img src="${esc(jf.img(next, 'Thumb', 320))}" alt=""><div><small>Up next</small><b>${esc(next.Name)}</b><small>S${next.ParentIndexNumber} E${next.IndexNumber}</small><div class="acts" style="margin-top:8px"><button class="btn gold small" data-p="next">Play now</button><button class="btn small" data-p="hidenext">Hide</button></div></div></div>`);
@@ -475,6 +490,7 @@ function menu(kind) {
     html = `<h4>Audio</h4>${pb.audio.map((a) => `<button data-audio="${a.index}" class="${S.audio === a.index ? 'on' : ''}">${esc(a.label)}</button>`).join('') || '<button disabled>Only one track</button>'}
       <h4>Quality</h4>${QUALITIES.map(([b, l]) => `<button data-q="${b}" class="${(S.quality || 0) === b ? 'on' : ''}">${l}</button>`).join('')}
       <h4>Speed</h4>${SPEEDS.map((r) => `<button data-rate="${r}" class="${S.v.playbackRate === r ? 'on' : ''}">${r === 1 ? 'Normal' : r + 'x'}</button>`).join('')}
+      <h4>Sleep timer <span class="h4-note">${sleepLabel()}</span></h4><div class="seg">${[['', 'Off'], ['end', 'End of episode'], ['15', '15m'], ['30', '30m'], ['60', '1h']].map(([v, l]) => `<button data-sleep="${v}" class="${sleep.mode === v ? 'on' : ''}">${l}</button>`).join('')}</div>
       <h4>Picture</h4><button data-p="fill" class="${el.classList.contains('fill') ? 'on' : ''}">Fill the screen</button><button data-p="info">Playback info</button>`;
   } else if (kind === 'episodes') {
     const list = S.list || [];
@@ -490,11 +506,14 @@ async function onClick(e) {
   if (!S) return;
   const b = e.target.closest('button');
   if (!b) {
-    if (!document.body.classList.contains('mini') && !e.target.closest('.pl-top,.pl-bottom,.pl-menu,.pl-next,.pl-skip,.pl-error,input,a')) toggle();
+    if (!document.body.classList.contains('mini') && !e.target.closest('.pl-top,.pl-bottom,.pl-menu,.pl-next,.pl-skip,.pl-error,.pl-still,input,a')) toggle();
     return;
   }
   e.stopPropagation();
   const p = b.dataset.p;
+  autoChain = 0;
+  if (p === 'still-yes') { $('.pl-still', root())?.remove(); return nextEpisode(); }
+  if (b.dataset.sleep != null) { setSleep(b.dataset.sleep); S.menu = null; $('.pl-menu', root())?.remove(); paintPlay(); return; }
   if (p === 'close') return close();
   if (p === 'toggle') return toggle();
   if (p === 'back10') return seekBy(-10);
@@ -570,6 +589,7 @@ export async function close(quiet) {
 
 // Keyboard
 document.addEventListener('keydown', (e) => {
+  autoChain = 0;
   if (!S || /input|select|textarea/i.test(e.target.tagName)) return;
   const k = e.key.toLowerCase();
   const map = {
