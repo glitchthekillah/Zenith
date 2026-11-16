@@ -328,7 +328,14 @@ function tick() {
   // Up next, 30 seconds before the end (or at the credits)
   const next = S.queue[0];
   const credits = S.segments.find((s) => s.type === 'Outro');
-  if (next && !S.nextShown && d && (p > d - 30 || (credits && p >= credits.start))) { S.nextShown = true; showNext(next); }
+  if (next && !S.nextShown && d && (p > d - 30 || (credits && p >= credits.start))) { S.nextShown = true; S.nextFrom = p; showNext(next); }
+  // Countdown to the next episode while the card is up
+  const card = S.nextShown && $('.pl-next', root());
+  if (card && d) {
+    const left = Math.max(0, Math.ceil(d - p)), span = Math.max(1, d - (S.nextFrom ?? d - 30));
+    const c = $('[data-next-count]', card); if (c) c.textContent = left ? `starts in ${left}s` : 'starting';
+    const bar = $('.pl-next-bar i', card); if (bar) bar.style.transform = `scaleX(${Math.min(1, (p - (S.nextFrom ?? p)) / span)})`;
+  }
   if ('mediaSession' in navigator && d && Number.isFinite(d)) { try { navigator.mediaSession.setPositionState({ duration: d, position: Math.min(p, d), playbackRate: S.v.playbackRate }); } catch {} }
 }
 function paintBuffer() {
@@ -456,7 +463,7 @@ function stillWatching() {
   root().insertAdjacentHTML('beforeend', `<div data-air-video-controls class="pl-still"><div class="pl-still-card"><b>Still watching?</b><small>Up next: ${esc(S.queue[0].Name || '')}</small><div class="pl-still-acts"><button class="btn gold" data-p="still-yes">${icon('play')}Keep watching</button><button class="btn" data-p="close">I'm done</button></div></div></div>`);
 }
 function showNext(next) {
-  root().insertAdjacentHTML('beforeend', `<div data-air-video-controls class="pl-next"><img src="${esc(jf.img(next, 'Thumb', 320))}" alt=""><div><small>Up next</small><b>${esc(next.Name)}</b><small>S${next.ParentIndexNumber} E${next.IndexNumber}</small><div class="acts" style="margin-top:8px"><button class="btn gold small" data-p="next">Play now</button><button class="btn small" data-p="hidenext">Hide</button></div></div></div>`);
+  root().insertAdjacentHTML('beforeend', `<div data-air-video-controls class="pl-next"><img src="${esc(jf.img(next, 'Thumb', 320))}" alt=""><div><small>Up next</small><b>${esc(next.Name)}</b><small>S${next.ParentIndexNumber} E${next.IndexNumber}${settings.playback.autoplayNext ? ` · <span data-next-count></span>` : ''}</small><span class="pl-next-bar"><i></i></span><div class="acts" style="margin-top:8px"><button class="btn gold small" data-p="next">Play now</button><button class="btn small" data-p="hidenext">Hide</button></div></div></div>`);
 }
 async function nextEpisode() {
   const n = S?.queue[0]; if (!n) return;

@@ -64,6 +64,7 @@ export async function signOut() { try { await api('/Sessions/Logout', { method: 
 const FIELDS = 'PrimaryImageAspectRatio,Overview,Genres,CommunityRating,OfficialRating,ProductionYear,RunTimeTicks,UserData,ChildCount,SeriesInfo,ParentId,ImageTags,BackdropImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,EndDate,Status,ProviderIds,ProductionLocations,Tags';
 const U = () => `/Users/${S().userId}`;
 export const views = () => api(`${U()}/Views`).then((r) => r.Items || []);
+export const upcoming = (limit = 20) => api(`/Shows/Upcoming?UserId=${S().userId}&Limit=${limit}&Fields=${FIELDS}&EnableImageTypes=Primary,Backdrop,Thumb`).then((r) => r.Items || []);
 export const resume = (limit = 16) => api(`${U()}/Items/Resume?Limit=${limit}&MediaTypes=Video&Fields=${FIELDS}&EnableImageTypes=Primary,Backdrop,Thumb`).then((r) => r.Items || []);
 export const nextUp = (limit = 16, seriesId = '') => api(`/Shows/NextUp?UserId=${S().userId}&Limit=${limit}&Fields=${FIELDS}${seriesId ? `&SeriesId=${seriesId}` : ''}&EnableResumable=false&EnableRewatching=${settings.app.rewatch !== false}`).then((r) => r.Items || []);
 export const latest = (parentId, limit = 18) => api(`${U()}/Items/Latest?ParentId=${parentId}&Limit=${limit}&Fields=${FIELDS}&GroupItems=true`);

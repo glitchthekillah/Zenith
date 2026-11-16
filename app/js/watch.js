@@ -266,8 +266,10 @@ function bindHero() {
   };
   // Hovering or focusing the banner holds the current slide (and its timer bar)
   const hold = (on) => { if (held === on) return; held = on; h.classList.toggle('held', on); if (on) { clearTimeout(heroTimer); left = Math.max(800, left - (Date.now() - started)); } else arm(); };
-  h.onmouseenter = () => hold(true); h.onmouseleave = () => hold(h.contains(document.activeElement));
-  h.onfocusin = () => hold(true); h.onfocusout = (e) => { if (!h.contains(e.relatedTarget) && !h.matches(':hover')) hold(false); };
+  // Only keyboard focus holds it: a mouse click leaves focus inside the banner, which used to stop it for good
+  h.onmouseenter = () => hold(true); h.onmouseleave = () => hold(!!h.querySelector(':focus-visible'));
+  h.onfocusin = (e) => { if (e.target.matches(':focus-visible')) hold(true); };
+  h.onfocusout = (e) => { if (!h.contains(e.relatedTarget) && !h.matches(':hover')) hold(false); };
   h.onkeydown = (e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); show(i + (e.key === 'ArrowRight' ? 1 : -1)); } };
   h.onclick = (e) => {
     const b = e.target.closest('[data-hero]'); if (b) return show(Number(b.dataset.hero));
