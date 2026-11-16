@@ -58,7 +58,7 @@ export async function title(type, id) {
   const base = fromSeerr({ ...d, mediaType: type });
   const seasonStatus = new Map((d.mediaInfo?.seasons || []).map((s) => [s.seasonNumber, s.status]));
   return { ...base, extra: extraInfo(d, r), genres: (d.genres || []).map((g) => g.name).slice(0, 4), runtime: d.runtime || d.episodeRunTime?.[0] || null, tagline: d.tagline || '',
-    seasons: type === 'tv' ? (d.seasons || []).filter((s) => s.seasonNumber > 0).map((s) => ({ n: s.seasonNumber, name: s.name, episodes: s.episodeCount || 0, status: ST[seasonStatus.get(s.seasonNumber)] || 'none' })) : [] };
+    seasons: type === 'tv' ? (d.seasons || []).filter((s) => s.seasonNumber > 0).map((s) => ({ n: s.seasonNumber, name: s.name, episodes: s.episodeCount || 0, poster: s.posterPath ? TMDB + 'w342' + s.posterPath : '', status: ST[seasonStatus.get(s.seasonNumber)] || 'none' })) : [] };
 }
 export const readingTitle = (x) => ask(`/api/reading-title?${new URLSearchParams({ key: x.key || '', type: x.type, title: x.title, workId: x.workId || '' })}`);
 // payload: { type, id, seasons, profile } for video; the ask site's reading payloads for books/manga/comics

@@ -152,9 +152,10 @@ fn configure_media_runtime() {
     if std::env::var_os(KEY).is_none() {
         std::env::set_var(KEY, "33554432");
     }
-    // WebKitGTK's DMA-BUF renderer is very slow or stalls on many NVIDIA and some Wayland setups
-    // (every page and image takes ages). The older path is fast everywhere; users can still override it.
-    if std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
+    // WebKitGTK's DMA-BUF renderer stalls on NVIDIA's own driver, so turn it off there only.
+    // Everywhere else it is what gives the GPU path (WebGL sky, smooth video); users can still override it.
+    let nvidia = std::path::Path::new("/sys/module/nvidia_drm").exists() || std::path::Path::new("/proc/driver/nvidia").exists();
+    if nvidia && std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
         std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
     }
 }

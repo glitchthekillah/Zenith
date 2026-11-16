@@ -59,12 +59,13 @@ function topBar() {
   const show = { movies: jf.ready(), shows: jf.ready(), read: kv.ready(), request: !!rq.provider(), home: true };
   $('#top').hidden = false;
   $('#top').innerHTML = `<a class="brand" href="#/home"><span class="orb"></span><b>zenith</b></a>
+    <div class="hist"><button class="icon-btn" data-hist="-1" title="Back (Alt+Left)" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button><button class="icon-btn" data-hist="1" title="Forward (Alt+Right)" aria-label="Forward"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button></div>
     <nav>${NAV.filter(([k]) => show[k]).map(([k, ic, l]) => `<a class="navlink" data-nav="${k}" href="#/${k}">${icon(ic)}<span>${l}</span></a>`).join('')}</nav>
     <form class="search" id="top-search" role="search"><div class="field">${icon('search')}<input name="q" placeholder="Search everything" autocomplete="off" aria-label="Search"></div></form>
     <div class="tools">${desktop ? `<a class="icon-btn dl-count" data-dl-badge href="#/downloads" title="Downloads">${icon('download')}</a>` : ''}
       <a class="icon-btn" href="#/settings" title="Settings">${icon('settings')}</a>
       <a class="me" href="#/settings" title="${esc(name)}" style="display:grid;place-items:center;text-decoration:none;overflow:hidden">${avatarHtml(name)}</a></div>`;
-  paintNav();
+  paintNav(); paintHist();
   paintServerLoading();
 }
 function paintNav() {
@@ -246,3 +247,27 @@ document.addEventListener('focusout', (e) => { if (e.target.matches?.('#top-sear
   addEventListener('resize', close); addEventListener('hashchange', close);
   document.addEventListener('scroll', (e) => { if (menu && !menu.contains(e.target) && performance.now() - openedAt > 200) close(); }, true);
 })();
+
+
+// Back and forward buttons in the top bar. Each page we open gets a number, so we know whether
+// there is somewhere to go back or forward to (works the same on Windows and Linux)
+var histCur = 0, histMax = 0;
+try { histMax = Number(sessionStorage.getItem('zhmax')) || 0; } catch {}
+const numbered = () => history.state && typeof history.state.zi === 'number';
+{ const rs = history.replaceState.bind(history); history.replaceState = (st, t, u) => rs({ ...(st || {}), zi: histCur }, t, u); }
+if (numbered()) histCur = history.state.zi; else history.replaceState(null, '', location.href);
+addEventListener('hashchange', () => {
+  if (numbered()) histCur = history.state.zi; // back or forward
+  else { histCur += 1; histMax = histCur; history.replaceState(null, '', location.href); } // a new page
+  try { sessionStorage.setItem('zhmax', String(histMax)); } catch {}
+  paintHist();
+});
+function paintHist() {
+  $$('[data-hist="-1"]').forEach((b) => { b.disabled = histCur <= 0; });
+  $$('[data-hist="1"]').forEach((b) => { b.disabled = histCur >= histMax; });
+}
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-hist]'); if (b && !b.disabled) history.go(Number(b.dataset.hist)); });
+document.addEventListener('keydown', (e) => {
+  if (!e.altKey || e.ctrlKey || e.metaKey || e.target.closest?.('input,textarea')) return;
+  if (e.key === 'ArrowLeft') { e.preventDefault(); history.back(); } else if (e.key === 'ArrowRight') { e.preventDefault(); history.forward(); }
+});
