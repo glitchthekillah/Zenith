@@ -21,6 +21,9 @@ function listTracks(item) {
 
 const root = () => $('#player');
 let S = null; // the current session
+// Skip back / forward amounts (Settings > Playback), 1 to 60 seconds
+const clampSkip = (n, d) => Math.min(60, Math.max(1, Math.round(Number(n)) || d));
+const skipB = () => clampSkip(settings.playback.skipBack, 10), skipF = () => clampSkip(settings.playback.skipFwd, 10);
 // Sleep timer (outlives a single episode) and the "still watching?" check after a run of autoplays
 const sleep = { mode: '', t: 0, until: 0 };
 let autoChain = 0;
@@ -97,9 +100,9 @@ function build() {
       <div class="pl-seek"><div class="track"><div class="buf"></div><div class="done"></div><div class="knob"></div></div><div class="pl-segments" aria-hidden="true"></div></div>
       <div class="pl-row">
         <button class="pl-btn hide-mini" data-p="prev" title="Previous episode" hidden>${icon('prev')}</button>
-        <button class="pl-btn hide-mini" data-p="back10" title="Back 10 seconds (Left)">${icon('skipb')}<span class="tag">10</span></button>
+        <button class="pl-btn hide-mini" data-p="back10" title="Back ${skipB()} seconds (Left)">${icon('skipb')}<span class="tag">${skipB()}</span></button>
         <button class="pl-btn play" data-p="toggle" title="Play / pause (Space)">${icon('play')}</button>
-        <button class="pl-btn hide-mini" data-p="fwd30" title="Forward 30 seconds (Right)">${icon('skipf')}<span class="tag">30</span></button>
+        <button class="pl-btn hide-mini" data-p="fwd30" title="Forward ${skipF()} seconds (Right)">${icon('skipf')}<span class="tag">${skipF()}</span></button>
         <button class="pl-btn" data-p="next" title="Next episode (N)" hidden>${icon('nextep')}</button>
         <div class="pl-vol"><button class="pl-btn" data-p="mute" title="Mute (M)">${icon('volume')}</button><input type="range" min="0" max="1" step="0.02" aria-label="Volume"></div>
         <span class="pl-time">0:00 / 0:00</span>
@@ -153,7 +156,7 @@ function build() {
   if ('mediaSession' in navigator) {
     const it = S.item;
     navigator.mediaSession.metadata = new MediaMetadata({ title: it.Name, artist: it.SeriesName || '', album: it.SeasonName || '', artwork: [{ src: jf.img(it, 'Primary', 512), sizes: '512x512' }].filter((a) => a.src) });
-    const h = { play: () => v.play(), pause: () => v.pause(), seekbackward: () => seekBy(-10), seekforward: () => seekBy(30), nexttrack: () => nextEpisode(), previoustrack: () => prevEpisode(), seekto: (d) => seekTo(d.seekTime) };
+    const h = { play: () => v.play(), pause: () => v.pause(), seekbackward: () => seekBy(-skipB()), seekforward: () => seekBy(skipF()), nexttrack: () => nextEpisode(), previoustrack: () => prevEpisode(), seekto: (d) => seekTo(d.seekTime) };
     for (const [k, fn] of Object.entries(h)) { try { navigator.mediaSession.setActionHandler(k, fn); } catch {} }
   }
 }
@@ -177,7 +180,7 @@ async function load(at = 0) {
   if (S.pb?.hls) jf.stopTranscode(S.pb);
   let pb;
   try {
-    pb = await jf.playback(S.item.Id, { audioIndex: S.audio, subIndex: S.sub ?? undefined, burnSub: !desktop?.nativeVideo && S.sub != null && !S.subTextOk, clientAudio: canSwitchAudio || !!desktop?.nativeVideo, start: at, maxBitrate: S.quality, forceTranscode: S.forceTranscode });
+    pb = await jf.playback(S.item.Id, { audioIndex: S.audio, subIndex: S.sub ?? undefined, burnSub: !desktop?.nativeVideo && S.sub != null && !S.subTextOk, clientAudio: canSwitchAudio || !!desktop?.nativeVideo, start: at, stream: !!S.useStream, maxBitrate: S.quality, forceTranscode: S.forceTranscode });
   } catch (e) {
     if (S !== session || session.loadEpoch !== epoch) return;
     // Picture subtitles (PGS) can't be shown without the server converting the video, which is off:
@@ -220,7 +223,17 @@ async function load(at = 0) {
     if (window.Hls?.isSupported()) {
       const hls = new window.Hls({ maxBufferLength: 60, backBufferLength: 60, startPosition: 0 });
       S.hls = hls;
-      hls.on(window.Hls.Events.ERROR, (e, d) => { if (d.fatal) { if (d.type === 'networkError') hls.startLoad(); else if (d.type === 'mediaError') hls.recoverMediaError(); else fail(new Error('The stream stopped. Try a lower quality.')); } });
+      // Recover from a hiccup a couple of times, then say what went wrong instead of spinning forever
+      const tries = { net: 0, media: 0 };
+      hls.on(window.Hls.Events.ERROR, (e, d) => {
+        if (!d.fatal) return;
+        if (d.type === 'networkError' && tries.net++ < 3) return void setTimeout(() => hls.startLoad(), 800 * tries.net);
+        if (d.type === 'mediaError' && tries.media++ < 2) return void hls.recoverMediaError();
+        fail(new Error(d.type === 'mediaError' ? `This device couldn't decode the stream (${d.details}).` : d.type === 'networkError' ? `The server stopped sending the stream (${d.details}${d.response?.code ? ` ${d.response.code}` : ''}).` : `The stream stopped (${d.details}).`));
+      });
+      // Nothing playing after a while: stop the endless spinner and explain
+      const session = S, epoch = S.loadEpoch;
+      setTimeout(() => { if (S === session && S.loadEpoch === epoch && S.v.readyState < 2 && !S.v.error) fail(new Error('The server took too long to start this stream. It may still be preparing the file; try again in a moment.')); }, 45000);
       // Most servers send the whole episode in the playlist (it starts at 0, not at the resume point):
       // then jump to the resume point ourselves, or it starts from the beginning while the bar says otherwise
       hls.once(window.Hls.Events.LEVEL_LOADED, (e, d) => {
@@ -523,8 +536,8 @@ async function onClick(e) {
   if (b.dataset.sleep != null) { setSleep(b.dataset.sleep); S.menu = null; $('.pl-menu', root())?.remove(); paintPlay(); return; }
   if (p === 'close') return close();
   if (p === 'toggle') return toggle();
-  if (p === 'back10') return seekBy(-10);
-  if (p === 'fwd30') return seekBy(30);
+  if (p === 'back10') return seekBy(-skipB());
+  if (p === 'fwd30') return seekBy(skipF());
   if (p === 'mute') { setAudioMuted(S.v, !audioMuted(S.v)); paintVolume(); return; }
   if (p === 'next') return nextEpisode();
   if (p === 'prev') return prevEpisode();
@@ -563,6 +576,8 @@ async function fail(e) {
   const native = desktop?.info ? await desktop.info().catch(() => null) : null;
   if (S !== session || S.loadEpoch !== epoch) return;
   const source = S.pb?.source || S.item.MediaSources?.[0];
+  // The original file wouldn't decode here: try once more through the server's repackaged stream
+  if ((e?.code === 3 || e?.code === 4) && !S.useStream && !S.pb?.hls) { S.useStream = true; return load(pos()); }
   const details = playbackFailure(e, native?.platform, source);
   // Keep failures local and actionable without requesting server conversion.
   const el = root();
@@ -600,7 +615,7 @@ document.addEventListener('keydown', (e) => {
   if (!S || /input|select|textarea/i.test(e.target.tagName)) return;
   const k = e.key.toLowerCase();
   const map = {
-    ' ': toggle, k: toggle, arrowleft: () => seekBy(e.shiftKey ? -30 : -10), arrowright: () => seekBy(e.shiftKey ? 60 : 30), j: () => seekBy(-10), l: () => seekBy(10),
+    ' ': toggle, k: toggle, arrowleft: () => seekBy(e.shiftKey ? -skipB() * 3 : -skipB()), arrowright: () => seekBy(e.shiftKey ? skipF() * 3 : skipF()), j: () => seekBy(-10), l: () => seekBy(10),
     arrowup: () => { S.v.volume = Math.min(1, S.v.volume + 0.05); flash(`${Math.round(S.v.volume * 100)}%`); }, arrowdown: () => { S.v.volume = Math.max(0, S.v.volume - 0.05); flash(`${Math.round(S.v.volume * 100)}%`); },
     f: () => fullscreen(), m: () => (desktop ? mini() : (setAudioMuted(S.v, !audioMuted(S.v)))), p: pip, c: () => menu('subs'), n: nextEpisode, escape: () => (S.menu ? menu(S.menu) : document.body.classList.contains('mini') ? mini(false) : document.body.classList.contains('fullscreen') ? fullscreen(false) : close()),
     '>': () => { const i = SPEEDS.indexOf(S.v.playbackRate); S.v.playbackRate = SPEEDS[Math.min(SPEEDS.length - 1, i + 1)]; flash(`${S.v.playbackRate}x`); }, '<': () => { const i = SPEEDS.indexOf(S.v.playbackRate); S.v.playbackRate = SPEEDS[Math.max(0, i - 1)]; flash(`${S.v.playbackRate}x`); },
@@ -614,3 +629,14 @@ desktop?.on((ch, data) => {
   if (ch === 'window' && 'fullscreen' in data) document.body.classList.toggle('fullscreen', data.fullscreen);
 });
 window.addEventListener('beforeunload', () => { if (S?.pb) jf.reportStop(S.item, S.pb, pos()); });
+
+// Picture-in-picture: hide the engine's plain "Playing in picture-in-picture" text and show our own card
+const pipCard = () => {
+  const it = S?.item; if (!it) return '';
+  const art = jf.img(it, 'Backdrop', 1280) || jf.img(it, 'Thumb', 1280) || (it.SeriesId ? jf.img({ Id: it.SeriesId, ImageTags: {}, BackdropImageTags: it.ParentBackdropImageTags || [] }, 'Backdrop', 1280) : '');
+  const title = it.Type === 'Episode' ? it.SeriesName : it.Name, sub = it.Type === 'Episode' ? `S${it.ParentIndexNumber} E${it.IndexNumber} · ${it.Name}` : (it.ProductionYear || '');
+  return `<div class="pl-pip" data-air-video-controls>${art ? `<img class="pl-pip-bg" src="${esc(art)}" alt="">` : ''}<div class="pl-pip-card"><span class="pl-pip-ic">${icon('pip')}</span><small>Playing in a mini window</small><b>${esc(title || '')}</b>${sub ? `<span>${esc(String(sub))}</span>` : ''}<button class="btn gold" data-pip-back>${icon('expand')} Bring it back here</button></div></div>`;
+};
+document.addEventListener('enterpictureinpicture', () => { const el = root(); if (!el || $('.pl-pip', el)) return; el.classList.add('in-pip'); const ui = $('.pl-ui', el); (ui || el).insertAdjacentHTML(ui ? 'beforebegin' : 'beforeend', pipCard()); }, true);
+document.addEventListener('leavepictureinpicture', () => { const el = root(); el?.classList.remove('in-pip'); $('.pl-pip', el || document)?.remove(); }, true);
+document.addEventListener('click', (e) => { if (e.target.closest('[data-pip-back]')) { e.stopPropagation(); document.exitPictureInPicture?.().catch(() => {}); } }, true);

@@ -109,7 +109,9 @@ function newCards(items) {
   }
   return out.join('');
 }
-export const shelf = (title, html, link = '', wide = false) => html ? `<section class="row"><div class="row-head"><h3>${esc(title)}</h3>${link ? `<a href="${link}">See all</a>` : ''}</div><div class="shelf"><button class="arrow l" data-scroll="-1" aria-label="Scroll left">${icon('back')}</button><div class="strip${wide ? ' wide' : ''}">${html}</div><button class="arrow r" data-scroll="1" aria-label="Scroll right">${icon('next')}</button></div></section>` : '';
+// Row titles: the subject ("…watched Ted", "New in Movies") gets the accent colour
+const rowTitle = (t) => { const m = /^(.*\b(?:watched|in|from|on)\s)(.+)$/i.exec(t); return m ? `${esc(m[1])}<em>${esc(m[2])}</em>` : esc(t); };
+export const shelf = (title, html, link = '', wide = false) => html ? `<section class="row"><div class="row-head"><h3>${rowTitle(title)}</h3>${link ? `<a href="${link}">See all</a>` : ''}</div><div class="shelf"><button class="arrow l" data-scroll="-1" aria-label="Scroll left">${icon('back')}</button><div class="strip${wide ? ' wide' : ''}">${html}</div><button class="arrow r" data-scroll="1" aria-label="Scroll right">${icon('next')}</button></div></section>` : '';
 
 // ── Home ────────────────────────────────────────────────────────────────
 route('home', () => defer(async (publish, alive) => {
@@ -131,13 +133,27 @@ route('home', () => defer(async (publish, alive) => {
       }));
     };
     let becauseId = '';
+    // Coming soon: the next episodes of shows you follow, with their air date
+    tasks.push(stream(() => jf.upcoming(20), (list) => {
+      if (!alive()) return;
+      const day = (d) => { const t = new Date(d), n = Math.round((new Date(t.toDateString()) - new Date(new Date().toDateString())) / 864e5); return n <= 0 ? 'Today' : n === 1 ? 'Tomorrow' : n < 7 ? t.toLocaleDateString(undefined, { weekday: 'short' }) : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };
+      const soon = list.filter((i) => i.PremiereDate).sort((a, b) => new Date(a.PremiereDate) - new Date(b.PremiereDate));
+      add(9.5, shelf('Coming soon', soon.map((i) => card(i, { wide: true, badge: day(i.PremiereDate) })).join('')));
+    }));
     // My list: everything you've hearted, newest first (Netflix-style)
     tasks.push(stream(() => jf.items({ filters: 'IsFavorite', types: 'Movie,Series', sort: 'DateCreated', order: 'Descending', limit: 30 }), (list) => {
       if (!alive()) return;
       add(2.5, shelf('My list', merge(list).map((i) => card(i)).join('')));
     }));
-    tasks.push(stream(() => jf.resume(20), (list) => {
-      const resume = remember(merge(list.sort(recent)).slice(0, 24));
+    tasks.push(stream(() => jf.resume(40), (list) => {
+      // One card per show: keep the episode you touched most recently. Going back to rewatch an
+      // earlier episode makes that one the newest, so the row follows you either way.
+      const seen = new Set();
+      const resume = remember(merge(list.sort(recent)).filter((i) => {
+        if (i.Type !== 'Episode') return true;
+        const key = String(i.SeriesName || i.SeriesId).toLowerCase();
+        if (seen.has(key)) return false; seen.add(key); return true;
+      }).slice(0, 24));
       stats.resume = resume.length; resumeTop = resume[0] || resumeTop;
       add(2, shelf('Continue watching', resume.map((i) => card(i, { wide: true, dismiss: true })).join(''), '', true));
       const seed = resume[0];
@@ -215,7 +231,7 @@ function greeting(st, resumeTop, shuffle) {
   const pick = shuffle.length ? shuffle[0] : null;
   return `<section class="hello"><a class="hello-pic" href="#/settings" title="Change your picture">${avatarHtml(name || '?')}</a>
     <div class="hello-text"><span class="kicker">${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }))}</span><h1>${hi}${name ? `, <em>${esc(name)}</em>` : ''}</h1>
-      ${chips.length ? `<div class="hello-stats">${chips.map(([n, l, href]) => `<a href="${href}"><b>${n}</b>${esc(l)}</a>`).join('')}</div>` : ''}</div>
+      <div class="hello-stats">${chips.map(([n, l, href]) => `<a href="${href}"><b>${n}</b>${esc(l)}</a>`).join('')}<a class="recap-chip" href="#/recap">${icon('spark')}Your ${new Date().getFullYear()}</a></div></div>
     <div class="hello-acts">${resumeTop ? resumeCard(resumeTop) : ''}${pick ? `<button class="btn hello-surprise" data-play="${pick.Id}" data-g="${esc(pick._g)}" title="${esc(pick.Name)}">${icon('shuffle')} Surprise me</button>` : ''}</div></section>`;
 }
 // The "pick up where you left off" card in the greeting: picture, progress and time left
@@ -234,7 +250,7 @@ function hero(list) {
   if (!list.length) return '';
   const slides = list.map((it, i) => {
     const title = it.Type === 'Episode' ? it.SeriesName : it.Name;
-    const bg = jf.img(it, 'Backdrop', 2560), logo = jf.img(it, 'Logo', 700);
+    const bg = jf.img(it, 'Backdrop', Math.min(2560, Math.ceil(innerWidth * (devicePixelRatio || 1) / 320) * 320)), logo = jf.img(it, 'Logo', 700);
     const meta = [it.ProductionYear, it.OfficialRating ? `<span class="rated">${esc(it.OfficialRating)}</span>` : '', fmtRuntime(it.RunTimeTicks), it.CommunityRating ? `<span class="star">${icon('star')}${it.CommunityRating.toFixed(1)}</span>` : '', (it.Genres || []).slice(0, 2).join(', ')]
       .filter(Boolean).map((x) => (String(x).startsWith('<span') ? x : esc(x))).join('<i class="dot"></i>');
     return `<div class="hero-slide" data-g="${esc(it._g || groups.active().id)}" data-i="${i}" ${i ? 'hidden inert aria-hidden="true"' : 'aria-hidden="false"'}>
@@ -392,6 +408,19 @@ document.addEventListener('click', async (e) => {
 });
 
 // ── A title's page ─────────────────────────────────────────────────────
+// 4K / HDR / Dolby Vision / Atmos tags from the file's own streams
+function qualityBadges(it) {
+  const src = it.MediaSources?.[0]; if (!src) return '';
+  const st = src.MediaStreams || [], v = st.find((s) => s.Type === 'Video'), auds = st.filter((s) => s.Type === 'Audio');
+  const tags = [];
+  if (v?.Width >= 3200 || v?.Height >= 2000) tags.push('4K'); else if (v?.Height >= 1000 || v?.Width >= 1900) tags.push('HD');
+  const range = `${v?.VideoRangeType || ''} ${v?.VideoRange || ''}`;
+  if (/DOVI|Dolby/i.test(range)) tags.push('Dolby Vision'); else if (/HDR10\+/i.test(range)) tags.push('HDR10+'); else if (/HDR|HLG/i.test(range)) tags.push('HDR');
+  if (auds.some((a) => /atmos/i.test(`${a.Profile || ''} ${a.DisplayTitle || ''} ${a.Title || ''}`))) tags.push('Atmos');
+  else if (auds.some((a) => (a.Channels || 0) >= 6)) tags.push(auds.some((a) => (a.Channels || 0) >= 8) ? '7.1' : '5.1');
+  if (st.some((s) => s.Type === 'Subtitle')) tags.push('CC');
+  return tags.length ? `<div class="qbadges">${tags.map((t) => `<span class="qb${/4K|Dolby|HDR|Atmos/.test(t) ? ' hi' : ''}">${esc(t)}</span>`).join('')}</div>` : '';
+}
 route('item', async (id, seasonId) => {
   id = splitId(id);
   if (!jf.ready()) return needServer('Jellyfin');
@@ -402,7 +431,8 @@ route('item', async (id, seasonId) => {
   if (it.Type === 'Season') return go(`/item/${it.SeriesId}/${it.Id}`);
   if (it.Type === 'Person') return personPage(it);
   const back = jf.img(it, 'Backdrop', 1920);
-  const facts = [it.ProductionYear, it.OfficialRating ? `<span class="pill">${esc(it.OfficialRating)}</span>` : '', fmtRuntime(it.RunTimeTicks), it.CommunityRating ? `<span class="star">${icon('star')} ${it.CommunityRating.toFixed(1)}</span>` : '', (it.Genres || []).slice(0, 3).join(', '), it.Type === 'Series' && it.Status ? (it.Status === 'Continuing' ? 'Ongoing' : 'Ended') : ''].filter(Boolean);
+  const leftSecs = it.RunTimeTicks && ['Movie', 'Episode'].includes(it.Type) ? (it.RunTimeTicks - (it.UserData?.PlaybackPositionTicks || 0)) / 1e7 : 0;
+  const facts = [it.ProductionYear, it.OfficialRating ? `<span class="pill">${esc(it.OfficialRating)}</span>` : '', fmtRuntime(it.RunTimeTicks), leftSecs > 60 ? `<span class="ends">Ends ${new Date(Date.now() + leftSecs * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>` : '', it.CommunityRating ? `<span class="star">${icon('star')} ${it.CommunityRating.toFixed(1)}</span>` : '', (it.Genres || []).slice(0, 3).join(', '), it.Type === 'Series' && it.Status ? (it.Status === 'Continuing' ? 'Ongoing' : 'Ended') : ''].filter(Boolean);
   const ep = it.Type === 'Episode';
   const people = (it.People || []).filter((p) => ['Actor', 'Director', 'Writer'].includes(p.Type)).slice(0, 24);
   const where = ['Movie', 'Series'].includes(it.Type) ? defer(() => copiesBlock(it, owner), copiesLoading(it)) : '';
@@ -411,14 +441,14 @@ route('item', async (id, seasonId) => {
   <div>
     ${ep ? `<a class="kicker" href="#/item/${it.SeriesId}" style="text-decoration:none">${esc(it.SeriesName)} · S${it.ParentIndexNumber} E${it.IndexNumber}</a>` : `<span class="kicker">${esc(it.Type === 'Series' ? 'Show' : it.Type === 'BoxSet' ? 'Collection' : it.Type)}</span>`}
     <h1>${esc(it.Name)}</h1>${it.Taglines?.[0] ? `<p class="tagline">${esc(it.Taglines[0])}</p>` : ''}
-    <div class="facts">${facts.join('<span>·</span>')}</div>
+    <div class="facts">${facts.join('<span>·</span>')}</div>${qualityBadges(it)}
     <p class="overview">${esc(it.Overview || '')}</p>
     ${where}
     ${it.Type === 'Series' ? defer((_publish, alive) => titleControls(it, owner, alive), '<p class="mute">Loading playback options…</p>') : await titleControls(it, owner)}
   </div></div></div>
   ${it.Type === 'Series' ? defer(() => seasonsBlock(it, seasonId, owner), loading(3)) : ''}
   ${it.Type === 'BoxSet' ? defer(() => groups.run(owner, () => boxsetBlock(it))) : ''}
-  ${people.length ? `<section class="row"><div class="row-head"><h3>Cast and crew</h3></div><div class="people">${people.map((p) => `<a class="person" href="#/item/${p.Id}" style="text-decoration:none"><div class="face">${jf.personImg(p) ? `<img loading="lazy" src="${esc(jf.personImg(p))}" alt="">` : ''}</div><b>${esc(p.Name)}</b>${esc(p.Role || p.Type)}</a>`).join('')}</div></section>` : ''}
+  ${people.length ? `<section class="row"><div class="row-head"><h3>Cast and crew</h3></div><div class="shelf"><button class="arrow l" data-scroll="-1" aria-label="Scroll left">${icon('back')}</button><div class="strip people">${people.map((p) => `<a class="person" href="#/item/${p.Id}" style="text-decoration:none"><div class="face">${jf.personImg(p) ? `<img loading="lazy" src="${esc(jf.personImg(p))}" alt="">` : ''}</div><b>${esc(p.Name)}</b><small>${esc(p.Role || p.Type || '')}</small></a>`).join('')}</div><button class="arrow r" data-scroll="1" aria-label="Scroll right">${icon('next')}</button></div></section>` : ''}
   ${defer(async () => shelf('More like this', remember(groups.tag(owner, await groups.run(owner, () => jf.similar(id)).catch(() => []))).map((i) => card(i)).join('')))}`;
   return html;
 });
@@ -524,12 +554,12 @@ async function seasonsBlock(series, seasonId, owner = groups.active()) {
   if (!seasons.length) return '';
   const cur = seasons.find((s) => s.Id === seasonId) || seasons.find((s) => !s.UserData?.Played && s.IndexNumber > 0) || seasons[0];
   const eps = remember(groups.tag(owner, await groups.run(owner, () => jf.episodes(series.Id, cur.Id))));
-  return `<section class="row" data-g="${esc(owner.id)}"><div class="row-head"><h3>Episodes</h3><span style="display:flex;gap:8px">${cur.UserData && !cur.UserData.Played ? `<button class="btn small" data-watched="${cur.Id}">${icon('check')} Mark season watched</button>` : ''}</span></div>
-    <div class="season-pick">${seasons.map((s) => { const pic = jf.img(s, 'Primary', 240) || jf.img(series, 'Primary', 240); const n = s.ChildCount; return `<a class="season ${s.Id === cur.Id ? 'on' : ''}" href="#/item/${series.Id}/${s.Id}">${pic ? `<img loading="lazy" src="${esc(pic)}" alt="">` : ''}<span class="season-in"><b>${esc(s.Name)}</b>${n ? `<small>${n} episode${n === 1 ? '' : 's'}</small>` : ''}</span>${s.UserData?.Played ? `<span class="check">${icon('check')}</span>` : ''}</a>`; }).join('')}</div>
+  return `<section class="row" data-g="${esc(owner.id)}"><div class="row-head"><h3>Episodes</h3><span style="display:flex;gap:8px"><button class="btn small" data-random-ep="${series.Id}" title="Play a random episode">${icon('shuffle')} Random episode</button>${cur.UserData && !cur.UserData.Played ? `<button class="btn small" data-watched="${cur.Id}">${icon('check')} Mark season watched</button>` : ''}</span></div>
+    <div class="season-pick">${seasons.map((s) => { const pic = jf.img(s, 'Primary', 240) || jf.img(series, 'Primary', 240); const n = s.ChildCount; return `<a class="season ${s.Id === cur.Id ? 'on' : ''}" href="#/item/${series.Id}/${s.Id}">${pic ? `<img loading="lazy" src="${esc(pic)}" alt="">` : ''}<span class="season-in"><b>${esc(s.Name)}</b>${n ? `<small>${(() => { const left = s.UserData?.UnplayedItemCount; const seen = left != null ? Math.max(0, n - left) : 0; return seen && seen < n ? `${seen} of ${n} watched` : `${n} episode${n === 1 ? '' : 's'}`; })()}</small>` : ''}</span>${n && s.UserData?.UnplayedItemCount != null && s.UserData.UnplayedItemCount < n && !s.UserData?.Played ? `<span class="season-prog"><i style="width:${Math.round((n - s.UserData.UnplayedItemCount) / n * 100)}%"></i></span>` : ''}${s.UserData?.Played ? `<span class="check">${icon('check')}</span>` : ''}</a>`; }).join('')}</div>
     <div class="episodes ${settings.app.covers ? 'big' : 'compact'}">${eps.map((e) => { const tp = tpInfo(e); return `<div class="ep" data-id="${e.Id}">
       ${settings.app.covers ? `<button class="card" data-play="${e.Id}" style="cursor:pointer"${tp ? ` data-tp="${esc(JSON.stringify(tp))}"` : ''}><div class="art">${jf.img(e, 'Thumb', 640) ? `<img loading="lazy" src="${esc(jf.img(e, 'Thumb', 640))}" alt="">` : `<span class="ph">${e.IndexNumber ?? ''}</span>`}<span class="tp"></span><span class="num">${e.IndexNumber ?? ''}</span>${e.RunTimeTicks ? `<span class="len">${esc(fmtRuntime(e.RunTimeTicks))}</span>` : ''}${e.UserData?.PlayedPercentage ? `<span class="bar"><i style="width:${e.UserData.PlayedPercentage}%"></i></span>` : ''}${e.UserData?.Played ? `<span class="check">${icon('check')}</span>` : ''}<span class="play-over"><span>${icon('play')}</span></span></div></button>` : `<button class="icon-btn play-sm" data-play="${e.Id}" title="Play">${icon('play')}</button>`}
       <div><h4>${e.IndexNumber ?? ''}. ${esc(e.Name)}</h4><p>${esc(e.Overview || '')}</p><small style="color:var(--dim)">${esc([fmtRuntime(e.RunTimeTicks), e.PremiereDate ? new Date(e.PremiereDate).toLocaleDateString() : ''].filter(Boolean).join(' · '))}</small></div>
-      <div class="acts"><button class="icon-btn ${e.UserData?.Played ? 'on' : ''}" data-watched="${e.Id}" title="Mark watched">${icon('check')}</button>${desktop ? `<button class="icon-btn" data-download="${e.Id}" title="Download">${icon('download')}</button>` : ''}</div>
+      <div class="acts"><button class="icon-btn ${e.UserData?.Played ? 'on' : ''}" data-watched="${e.Id}" title="Mark watched">${icon('check')}</button>${e.IndexNumber > 1 ? `<button class="icon-btn" data-watched-before="${e.Id}" title="Mark everything before this as watched">${icon('back')}</button>` : ''}${desktop ? `<button class="icon-btn" data-download="${e.Id}" title="Download">${icon('download')}</button>` : ''}</div>
     </div>`; }).join('')}</div></section>`;
 }
 // Picking a season swaps only the episode list, so the page and the season row keep their scroll
@@ -710,13 +740,18 @@ document.addEventListener('click', async (e) => {
   if (un) {
     e.preventDefault(); e.stopPropagation();
     const c = un.closest('.card');
-    try { await groups.run(groups.byId(c?.dataset.g) || groups.active(), () => jf.setWatched(un.dataset.unresume, false)); c?.remove(); toast('Removed from Continue watching', 'ok'); } catch (err) { toast(err.message, 'bad'); }
+    const g = groups.byId(c?.dataset.g) || groups.active(), id = un.dataset.unresume, parent = c?.parentElement, next = c?.nextElementSibling;
+    try {
+      const ticks = await groups.run(g, () => jf.item(id)).then((x) => x.UserData?.PlaybackPositionTicks || 0).catch(() => 0);
+      await groups.run(g, () => jf.setWatched(id, false)); c?.remove();
+      toast('Removed from Continue watching', 'ok', ticks ? async () => { await groups.run(g, () => jf.setPosition(id, ticks)); if (parent && c) parent.insertBefore(c, next && next.isConnected ? next : null); } : null);
+    } catch (err) { toast(err.message, 'bad'); }
     return;
   }
   const w = e.target.closest('[data-watched]');
   if (w) {
     const on = !w.classList.contains('on');
-    try { await jf.setWatched(w.dataset.watched, on); w.classList.toggle('on', on); toast(on ? 'Marked as watched' : 'Marked as not watched', 'ok'); } catch (err) { toast(err.message, 'bad'); }
+    try { await jf.setWatched(w.dataset.watched, on); w.classList.toggle('on', on); toast(on ? 'Marked as watched' : 'Marked as not watched', 'ok', async () => { await jf.setWatched(w.dataset.watched, !on); w.classList.toggle('on', !on); }); } catch (err) { toast(err.message, 'bad'); }
     return;
   }
   const fav = e.target.closest('[data-fav]');
@@ -736,3 +771,55 @@ document.addEventListener('click', async (e) => {
 });
 // After playback, refresh the page so progress bars and "Next up" are current
 on('player', ({ open }) => { if (!open && ['home', 'item', 'movies', 'shows', 'library'].includes(location.hash.replace(/^#\/?/, '').split('/')[0] || 'home')) import('./core.js').then((c) => c.render()); });
+
+
+// ── Your year: a recap of what you watched this year, from every server you're signed in to ──
+route('recap', () => defer(async () => {
+  const year = new Date().getFullYear(), from = new Date(year, 0, 1);
+  const all = (await Promise.all(groups.with('jellyfin').map((g) => groups.run(g, () => jf.items({ filters: 'IsPlayed', types: 'Movie,Episode', sort: 'DatePlayed', order: 'Descending', limit: 3000 })).then((r) => groups.tag(g, r.Items || [])).catch(() => [])))).flat();
+  const seen = all.filter((i) => i.UserData?.LastPlayedDate && new Date(i.UserData.LastPlayedDate) >= from);
+  if (!seen.length) return `<div class="empty"><h2>Your ${year} is just getting started</h2><p>Watch something and your year in review fills in here.</p><a class="btn gold" href="#/home">Find something to watch</a></div>`;
+  const movies = seen.filter((i) => i.Type === 'Movie'), eps = seen.filter((i) => i.Type === 'Episode');
+  const hours = Math.round(seen.reduce((n, i) => n + (i.RunTimeTicks || 0), 0) / 36e9);
+  const tally = (list, key) => { const m = new Map(); for (const i of list) { const k = key(i); if (!k) continue; const e = m.get(k) || { n: 0, it: i }; e.n++; m.set(k, e); } return [...m.entries()].sort((a, b) => b[1].n - a[1].n); };
+  const shows = tally(eps, (i) => i.SeriesName).slice(0, 5);
+  const genres = tally(movies.flatMap((m) => (m.Genres || []).map((g) => ({ ...m, _genre: g }))), (i) => i._genre).slice(0, 5);
+  const months = tally(seen, (i) => new Date(i.UserData.LastPlayedDate).toLocaleDateString(undefined, { month: 'long' }));
+  const stat = (n, l) => `<div class="rc-stat"><b>${n.toLocaleString()}</b><span>${esc(l)}</span></div>`;
+  const list = (rows, unit) => rows.map(([k, e], n) => `<li><span class="rc-n">${n + 1}</span>${e.it.SeriesId || e.it.Id ? `<span class="rc-t">${esc(k)}</span>` : esc(k)}<span class="rc-c">${e.n} ${unit}${e.n === 1 ? '' : 's'}</span></li>`).join('');
+  return `<div class="page-head"><div><span class="kicker">Year in review</span><h1>Your ${year}</h1></div></div>
+  <section class="recap">
+    <div class="rc-stats">${stat(hours, 'hours watched')}${stat(movies.length, movies.length === 1 ? 'movie' : 'movies')}${stat(eps.length, eps.length === 1 ? 'episode' : 'episodes')}${stat(new Set(eps.map((e) => e.SeriesName)).size, 'shows')}</div>
+    ${months[0] ? `<p class="rc-line">Your busiest month was <b>${esc(months[0][0])}</b>, with ${months[0][1].n} things watched.</p>` : ''}
+    <div class="rc-cols">${shows.length ? `<div class="panel"><h3>Top shows</h3><ol class="rc-list">${list(shows, 'episode')}</ol></div>` : ''}${genres.length ? `<div class="panel"><h3>Favourite movie genres</h3><ol class="rc-list">${list(genres, 'movie')}</ol></div>` : ''}</div>
+  </section>${shelf('Movies you watched this year', movies.slice(0, 30).map((i) => card(i)).join(''))}`;
+}, loading(6)));
+
+// Random episode from the whole show, and "mark everything before this as watched"
+document.addEventListener('click', async (e) => {
+  const r = e.target.closest?.('[data-random-ep]');
+  if (r) {
+    e.preventDefault(); r.disabled = true;
+    const g = groups.byId(r.closest('[data-g]')?.dataset.g) || groups.active();
+    try {
+      const eps = await groups.run(g, () => jf.episodes(r.dataset.randomEp)).then((l) => l.filter((x) => x.LocationType !== 'Virtual'));
+      if (!eps.length) throw new Error('No episodes to pick from.');
+      const pick = eps[Math.floor(Math.random() * eps.length)];
+      remember(groups.tag(g, [pick])); toast(`S${pick.ParentIndexNumber} E${pick.IndexNumber} · ${pick.Name}`, 'ok');
+      await player.play(groups.tag(g, [pick])[0], { start: 0 });
+    } catch (err) { toast(err.message, 'bad'); } finally { r.disabled = false; }
+    return;
+  }
+  const b = e.target.closest?.('[data-watched-before]');
+  if (!b) return;
+  e.preventDefault();
+  const rows = [...b.closest('.episodes').querySelectorAll('.ep')], i = rows.findIndex((x) => x.dataset.id === b.dataset.watchedBefore);
+  const todo = rows.slice(0, i).filter((x) => !x.querySelector('[data-watched]')?.classList.contains('on'));
+  if (!todo.length) return toast('Everything before this is already watched', 'ok');
+  const g = groups.byId(b.closest('[data-g]')?.dataset.g) || groups.active();
+  try {
+    await groups.run(g, () => Promise.all(todo.map((x) => jf.setWatched(x.dataset.id, true))));
+    todo.forEach((x) => x.querySelectorAll('[data-watched], .check').forEach((n) => n.classList?.add('on')));
+    toast(`Marked ${todo.length} episode${todo.length === 1 ? '' : 's'} as watched`, 'ok', async () => { await groups.run(g, () => Promise.all(todo.map((x) => jf.setWatched(x.dataset.id, false)))); todo.forEach((x) => x.querySelector('[data-watched]')?.classList.remove('on')); });
+  } catch (err) { toast(err.message, 'bad'); }
+});

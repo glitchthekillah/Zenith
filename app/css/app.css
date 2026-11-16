@@ -643,9 +643,9 @@ html.glide,html.glide *,html.glide *::before,html.glide *::after{transition:back
 :root[data-theme=light] .pp{background:rgba(255,255,255,.7)}
 
 /* Manga and books: banner, or a fan of the series' own covers when there's no banner */
-.backdrop.collage{display:grid;grid-template-columns:repeat(9,1fr);gap:10px;padding:0 0 0 30%;transform:rotate(-6deg) scale(1.25);transform-origin:70% 40%}
-.backdrop.collage img{width:100%;aspect-ratio:2/3;height:auto;object-fit:cover;border-radius:10px;opacity:.55;box-shadow:0 20px 40px -20px #000}
-.backdrop.collage img:nth-child(even){transform:translateY(60px)}
+.backdrop.collage .collage-in{position:absolute;inset:-8% -6% -8% 0;display:grid;grid-template-columns:repeat(9,1fr);gap:10px;padding:0 0 0 30%;transform:rotate(-6deg) scale(1.25);transform-origin:70% 40%}
+.backdrop.collage .collage-in img{width:100%;aspect-ratio:2/3;height:auto;object-fit:cover;border-radius:10px;opacity:.55;box-shadow:0 20px 40px -20px #000}
+.backdrop.collage .collage-in img:nth-child(even){transform:translateY(60px)}
 .genre-pills{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
 .genre-pills span{padding:4px 11px;border-radius:99px;font-size:12.5px;border:1px solid var(--line2);background:rgba(7,7,13,.4);color:#e9e5f2}
 :root[data-theme=light] .genre-pills span{background:rgba(255,255,255,.7);color:var(--text)}
@@ -849,3 +849,134 @@ body.playing #server-loading,body.mini #server-loading{display:none}
 .hero-split .hero-slide[hidden]{opacity:0!important;transition:opacity .35s ease,visibility 0s .35s!important}
 .hero-split .hero-slide:not([hidden]) .hero-art img{animation:none!important}
 @media(prefers-reduced-motion:reduce){.hero-split .hero-slide,.hero-split .hero-slide[hidden]{transition:none!important}}
+/* Custom tooltips */
+.ztip{position:fixed;left:0;top:0;z-index:9999;max-width:260px;padding:6px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(18,15,26,.86);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 12px 28px -12px rgba(0,0,0,.9);color:#f3f1fa;font:500 12.5px/1.35 var(--disp);pointer-events:none;opacity:0;transition:opacity .14s ease;white-space:normal}
+.ztip.show{opacity:1}
+:root[data-theme=light] .ztip{background:rgba(255,255,255,.92);color:var(--text);border-color:var(--line2)}
+@media(prefers-reduced-motion:reduce){.ztip{transition:none}}
+/* Cast and crew: scrolls like the other rows, long names and roles stay tidy */
+.strip.people{grid-auto-columns:120px;gap:12px}
+.person{min-width:0}
+.person b{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.person small{display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+/* Linux: no live background blur (it's drawn in software there and slows everything down) */
+html.linux *,html.linux *::before,html.linux *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html.linux .lt-bg img{transition:none}
+/* Linux: keep scrolling smooth. The background glows are huge blurred shapes that the Linux engine redraws
+   on every scroll, so there they become plain soft gradients that never move; off-screen rows skip drawing. */
+html.linux .sky i{filter:none;will-change:auto;animation:none!important;opacity:.55}
+html.linux .sky .g1{background:radial-gradient(closest-side,rgba(255,154,60,.6),transparent)}
+html.linux .sky .g2{background:radial-gradient(closest-side,rgba(122,77,255,.65),transparent)}
+html.linux .sky .g3{background:radial-gradient(closest-side,rgba(255,79,139,.45),transparent)}
+html.linux .sky .g4{background:radial-gradient(closest-side,rgba(47,164,255,.35),transparent)}
+html.linux .row{content-visibility:auto;contain-intrinsic-size:auto 320px}
+html.linux .card,html.linux .libtile,html.linux .lt-bg img,html.linux .lt-fan img{transition:none!important}
+/* Picture-in-picture: our own card instead of the engine's plain text */
+#player.in-pip video{opacity:0!important}
+.pl-pip{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;background:#07060c}
+.pl-pip-bg{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);object-fit:cover;filter:blur(36px) saturate(1.3) brightness(.38);transform:scale(1.05)}
+html.linux .pl-pip-bg{filter:brightness(.3)}
+.pl-pip-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;max-width:min(520px,86%);padding:30px 34px;border-radius:24px;border:1px solid rgba(255,255,255,.14);background:rgba(18,15,26,.6);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 30px 70px -30px #000;text-align:center;color:#fff;animation:plResume .3s cubic-bezier(.2,.8,.2,1)}
+.pl-pip-ic{display:grid;place-items:center;width:52px;height:52px;margin-bottom:8px;border-radius:16px;background:var(--grad);color:#1d0f14}
+.pl-pip-ic .i{width:26px;height:26px}
+.pl-pip-card small{font:600 11px var(--disp);letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
+.pl-pip-card b{font:700 24px/1.2 var(--disp);letter-spacing:-.02em}
+.pl-pip-card span:not(.pl-pip-ic){color:rgba(255,255,255,.65);font-size:14px}
+.pl-pip-card .btn{margin-top:14px}
+/* Ends at (player + details) */
+.pl-ends{margin-left:12px;font-style:normal;color:rgba(255,255,255,.55)}
+.facts .ends{color:var(--amber)}
+/* Toast undo */
+.toast-undo{margin-left:12px;padding:3px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:inherit;font:600 12.5px var(--disp);cursor:pointer}
+.toast-undo:hover{background:rgba(255,255,255,.2)}
+/* Season progress */
+.season{position:relative}
+.season-prog{position:absolute;left:10px;right:10px;bottom:7px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
+.season-prog i{display:block;height:100%;background:var(--grad)}
+/* Keyboard shortcuts */
+.pl-keys{position:absolute;inset:0;z-index:6;display:grid;place-items:center;background:rgba(6,5,10,.55)}
+.pl-keys-card{min-width:min(460px,90%);padding:24px 26px;border-radius:22px;border:1px solid rgba(255,255,255,.14);background:rgba(18,15,26,.82);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);color:#fff;display:flex;flex-direction:column;gap:14px}
+.pl-keys-card>b{font:700 20px var(--disp)}
+.pl-keys-card dl{display:grid;grid-template-columns:auto 1fr;gap:9px 18px;margin:0;font-size:14px}
+.pl-keys-card dt{text-align:right;white-space:nowrap}.pl-keys-card dd{margin:0;color:rgba(255,255,255,.75)}
+.pl-keys-card kbd{display:inline-block;min-width:22px;padding:2px 7px;border-radius:6px;border:1px solid rgba(255,255,255,.22);border-bottom-width:2px;background:rgba(255,255,255,.08);font:600 12px var(--disp);text-align:center}
+.pl-keys-card .btn{align-self:center}
+/* Recent searches */
+#top-search{position:relative}
+.recent-searches{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:40;padding:8px;border-radius:16px;border:1px solid var(--line2);background:rgba(18,15,26,.92);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);box-shadow:0 24px 50px -24px #000}
+.rs-head{display:flex;justify-content:space-between;align-items:center;padding:4px 8px 8px;font:600 11px var(--disp);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.rs-head button{border:0;background:none;color:var(--mute);font:600 12px var(--disp);cursor:pointer;text-transform:none;letter-spacing:0}
+.rs-head button:hover{color:var(--text)}
+.rs-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:none;color:var(--text);font-size:14px;text-align:left;cursor:pointer}
+.rs-item:hover{background:rgba(255,255,255,.07)}
+.rs-item .i{width:15px;height:15px;opacity:.5}
+:root[data-theme=light] .recent-searches{background:rgba(255,255,255,.95)}
+/* Back to top */
+.to-top{position:fixed;right:24px;bottom:24px;z-index:30;display:grid;place-items:center;width:44px;height:44px;border-radius:14px;border:1px solid var(--line2);background:rgba(18,15,26,.75);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);color:var(--text);cursor:pointer;opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .2s,transform .2s}
+.to-top.show{opacity:1;transform:none;pointer-events:auto}
+.to-top:hover{border-color:rgba(var(--pink-rgb),.5)}
+.to-top .i{width:18px;height:18px}
+body.playing .to-top{display:none}
+
+/* Rows that continue off-screen dissolve at the edge instead of being cut off (slowly shifting noise) */
+.shelf{--dz-r:linear-gradient(#000,#000);--dz-l:linear-gradient(#000,#000)}
+.shelf.more-r{--dz-r:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22160%22%20height%3D%22480%22%20viewBox%3D%220%200%20160%20480%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20x2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22/%3E%3C/linearGradient%3E%3Cfilter%20id%3D%22f%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.085%20.06%22%20numOctaves%3D%222%22%20seed%3D%227%22%20result%3D%22n%22%3E%3Canimate%20attributeName%3D%22baseFrequency%22%20dur%3D%229s%22%20values%3D%22.085%20.06%3B.095%20.052%3B.078%20.068%3B.085%20.06%22%20repeatCount%3D%22indefinite%22/%3E%3C/feTurbulence%3E%3CfeColorMatrix%20in%3D%22n%22%20type%3D%22matrix%22%20values%3D%220%200%200%200%201%200%200%200%200%201%200%200%200%200%201%201%200%200%200%200%22%20result%3D%22na%22/%3E%3CfeComposite%20in%3D%22SourceGraphic%22%20in2%3D%22na%22%20operator%3D%22arithmetic%22%20k2%3D%221.5%22%20k3%3D%22-1%22%20k4%3D%22-.05%22%20result%3D%22d%22/%3E%3CfeComponentTransfer%20in%3D%22d%22%3E%3CfeFuncA%20type%3D%22linear%22%20slope%3D%223.2%22%20intercept%3D%220%22/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3C/defs%3E%3Crect%20width%3D%22160%22%20height%3D%22480%22%20fill%3D%22url%28%23g%29%22%20filter%3D%22url%28%23f%29%22/%3E%3C/svg%3E")}
+.shelf.more-l{--dz-l:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22160%22%20height%3D%22480%22%20viewBox%3D%220%200%20160%20480%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%221%22%20x2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22/%3E%3C/linearGradient%3E%3Cfilter%20id%3D%22f%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.085%20.06%22%20numOctaves%3D%222%22%20seed%3D%227%22%20result%3D%22n%22%3E%3Canimate%20attributeName%3D%22baseFrequency%22%20dur%3D%229s%22%20values%3D%22.085%20.06%3B.095%20.052%3B.078%20.068%3B.085%20.06%22%20repeatCount%3D%22indefinite%22/%3E%3C/feTurbulence%3E%3CfeColorMatrix%20in%3D%22n%22%20type%3D%22matrix%22%20values%3D%220%200%200%200%201%200%200%200%200%201%200%200%200%200%201%201%200%200%200%200%22%20result%3D%22na%22/%3E%3CfeComposite%20in%3D%22SourceGraphic%22%20in2%3D%22na%22%20operator%3D%22arithmetic%22%20k2%3D%221.5%22%20k3%3D%22-1%22%20k4%3D%22-.05%22%20result%3D%22d%22/%3E%3CfeComponentTransfer%20in%3D%22d%22%3E%3CfeFuncA%20type%3D%22linear%22%20slope%3D%223.2%22%20intercept%3D%220%22/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3C/defs%3E%3Crect%20width%3D%22160%22%20height%3D%22480%22%20fill%3D%22url%28%23g%29%22%20filter%3D%22url%28%23f%29%22/%3E%3C/svg%3E")}
+.shelf>.strip{-webkit-mask:var(--dz-l) left/160px 100% no-repeat,linear-gradient(#000,#000) center/calc(100% - 318px) 100% no-repeat,var(--dz-r) right/160px 100% no-repeat;mask:var(--dz-l) left/160px 100% no-repeat,linear-gradient(#000,#000) center/calc(100% - 318px) 100% no-repeat,var(--dz-r) right/160px 100% no-repeat}
+html.linux .shelf.more-r{--dz-r:linear-gradient(90deg,#000,transparent)}
+html.linux .shelf.more-l{--dz-l:linear-gradient(270deg,#000,transparent)}
+@media (prefers-reduced-motion:reduce){.shelf.more-r{--dz-r:linear-gradient(90deg,#000,transparent)}.shelf.more-l{--dz-l:linear-gradient(270deg,#000,transparent)}}
+/* Row titles that stand out: gradient tick, bolder type, accent on the subject, a soft underline glow */
+.row-head{align-items:center;margin-bottom:10px}
+.row-head h3{position:relative;display:block;font:700 23px/1.15 var(--disp);letter-spacing:-.025em}
+.row-head h3::before{content:"";display:inline-block;vertical-align:-3px;margin-right:12px;width:5px;height:22px;border-radius:3px;background:var(--grad);box-shadow:0 0 14px rgba(var(--pink-rgb),.55)}
+.row-head h3 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.row-head h3::after{content:"";position:absolute;left:17px;right:-14px;bottom:-7px;height:1px;background:linear-gradient(90deg,rgba(var(--pink-rgb),.45),transparent)}
+.row-head a{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:999px;border:1px solid var(--line2);font-size:13px}
+.row-head a:hover{border-color:rgba(var(--pink-rgb),.5)}
+/* Request page: server picker, watch-on, Seerr-style detail */
+.req-to{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 4px}
+.req-to>span{font:600 12px var(--disp);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-right:4px}
+.req-to button{padding:6px 14px;border-radius:999px;border:1px solid var(--line2);background:var(--glass);color:var(--text);font:600 13px var(--disp);cursor:pointer}
+.req-to button.on{border-color:rgba(var(--pink-rgb),.6);background:rgba(var(--pink-rgb),.14)}
+.req-to small{width:100%;color:var(--dim);font-size:12px}
+.watch-on{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0 2px}
+.watch-on .state .i{width:14px;height:14px;vertical-align:-2px}
+.req-more{margin-top:26px}
+.req-links{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:18px}
+.rating-chip{display:inline-flex;align-items:baseline;gap:6px;padding:7px 12px;border-radius:12px;border:1px solid var(--line2);background:var(--glass)}
+.rating-chip b{font:700 16px var(--disp)}.rating-chip small{color:var(--mute);font-size:12px}
+.rating-chip.rt b{color:#ff6b57}.rating-chip.imdb b{color:#f5c518}
+.req-facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:2px 18px;margin:0 0 22px;padding:14px 18px;border-radius:18px;border:1px solid var(--line);background:var(--glass)}
+.req-facts div{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-bottom:1px solid var(--line)}
+.req-facts dt{font:600 11px var(--disp);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.req-facts dd{margin:0;font-size:14px}
+.req-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.req-tags span{padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.06);color:var(--mute);font-size:12px}
+/* Detail pages: the backdrop melts in under the toolbar instead of starting at a hard edge */
+.detail .backdrop{-webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.35) 9%,#000 26%,#000 46%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.35) 9%,#000 26%,#000 46%,transparent 100%)}
+.detail .backdrop img{object-position:center 22%}
+/* Page titles (Library / Movies …): their own look, bigger and anchored by the accent */
+.page-head{position:relative;align-items:flex-end;margin:14px 0 22px;padding-bottom:14px}
+.page-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,rgba(var(--pink-rgb),.6),rgba(var(--amber-rgb),.25) 30%,transparent 70%)}
+.page-head .kicker{display:inline-flex;align-items:center;gap:8px;padding:4px 11px 4px 9px;margin-bottom:10px;border-radius:999px;border:1px solid rgba(var(--amber-rgb),.35);background:rgba(var(--amber-rgb),.08)}
+.page-head .kicker::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--grad);box-shadow:0 0 10px rgba(var(--pink-rgb),.8)}
+.page-head h1{font:800 clamp(38px,4.2vw,58px)/1 var(--disp);letter-spacing:-.045em;background:linear-gradient(180deg,#fff 30%,rgba(255,255,255,.72));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+:root[data-theme=light] .page-head h1{background:none;color:var(--text)}
+#lib-count{padding:6px 14px;border-radius:999px;border:1px solid var(--line2);background:var(--glass);font:600 13px var(--disp);color:var(--text)}
+/* Episode rows: a darker, calmer panel so the background swirl doesn't fight the text */
+.ep{background:linear-gradient(90deg,rgba(10,8,16,.86),rgba(10,8,16,.72));border-color:rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.ep:hover{background:linear-gradient(90deg,rgba(14,11,22,.92),rgba(14,11,22,.8))}
+.ep p{color:rgba(255,255,255,.72)}
+:root[data-theme=light] .ep{background:rgba(255,255,255,.88)}
+:root[data-theme=light] .ep p{color:var(--mute)}
+/* Loading: placeholders hold the layout, pictures fade in instead of popping */
+.hero-skel{height:clamp(300px,25vw,420px);border-radius:24px;margin-bottom:22px;background:var(--glass);border:1px solid var(--line);animation:shimmer 1.4s ease-in-out infinite}
+.skel-title{display:block;width:220px;height:24px;border-radius:8px;background:var(--glass2);animation:shimmer 1.4s ease-in-out infinite}
+.skel-title::before,.skel-title::after{display:none!important}
+main .card img,main .art img,main .person img,main .lt-bg img,main .lt-fan img,main .backdrop img,main .season img,main .hr-art img,main .poster img,main .detail .art img{opacity:0;transition:opacity .35s ease}
+main img.ld{opacity:1}
+.lt-bg img.ld{opacity:1}
+@media (prefers-reduced-motion:reduce){main img{transition:none}}
+/* Rows: room on both sides so a hovered/outlined first card isn't clipped at the left edge */
+.strip{padding-left:10px!important;padding-right:10px!important;margin-left:-10px;margin-right:-10px;scroll-padding-inline:10px}

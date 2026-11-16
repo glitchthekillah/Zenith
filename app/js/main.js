@@ -79,7 +79,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.id !== 'top-search') return;
   e.preventDefault();
   const q = e.target.q.value.trim();
-  if (q) go(`/search/${encodeURIComponent(q)}`);
+  if (q) { rememberSearch(q); hideRecent(); go(`/search/${encodeURIComponent(q)}`); }
 });
 document.addEventListener('keydown', (e) => {
   if (player.isOpen() || $('#reader:not([hidden])')) return;
@@ -104,3 +104,81 @@ setTimeout(async () => {
   } catch (e) { if (e.status === 401) toast('Sign in to the request site again in settings.'); }
   try { if (settings.servers.seerr?.userId) await (await import('./seerr.js')).me(); } catch (e) { if (e.status === 401 || e.status === 403) toast('Sign in to Seerr again in settings.'); }
 }, 4000);
+
+// Our own tooltips instead of the system ones: any element with a title gets a glass tooltip.
+// The title moves to data-tip on first hover (that's what stops the native one from showing).
+(() => {
+  let tip, timer, cur;
+  const hide = () => { clearTimeout(timer); cur = null; tip?.classList.remove('show'); };
+  const place = (el) => {
+    const r = el.getBoundingClientRect(), t = tip.getBoundingClientRect(), pad = 8;
+    let x = r.left + r.width / 2 - t.width / 2, y = r.top - t.height - 10, below = false;
+    if (y < pad) { y = r.bottom + 10; below = true; }
+    x = Math.max(pad, Math.min(x, innerWidth - t.width - pad));
+    tip.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;
+    tip.classList.toggle('below', below);
+  };
+  document.addEventListener('pointerover', (e) => {
+    const el = e.target.closest?.('[title],[data-tip]');
+    if (!el || el === cur) return;
+    if (el.hasAttribute('title')) {
+      const t = el.getAttribute('title'); el.removeAttribute('title');
+      if (t) { el.dataset.tip = t; if (!el.hasAttribute('aria-label') && !el.textContent.trim()) el.setAttribute('aria-label', t); }
+    }
+    const text = el.dataset.tip; if (!text) return;
+    hide(); cur = el;
+    timer = setTimeout(() => {
+      if (cur !== el || !el.isConnected) return;
+      if (!tip) { tip = document.createElement('div'); tip.className = 'ztip'; tip.setAttribute('role', 'tooltip'); document.body.appendChild(tip); }
+      tip.textContent = text; place(el); tip.classList.add('show');
+    }, 380);
+  }, true);
+  document.addEventListener('pointerout', (e) => { if (cur && !cur.contains(e.relatedTarget)) hide(); }, true);
+  for (const ev of ['pointerdown', 'scroll', 'keydown', 'blur']) addEventListener(ev, hide, true);
+})();
+
+// Linux's web engine blurs in software, which makes every glass panel slow to draw: use solid glass there
+if (globalThis.zenithDesktop?.linuxStream) document.documentElement.classList.add('linux');
+
+// Recent searches under the search box
+function rememberSearch(q) {
+  const list = (settings.app.recentSearches || []).filter((x) => x.toLowerCase() !== q.toLowerCase());
+  settings.app.recentSearches = [q, ...list].slice(0, 8); save();
+}
+const hideRecent = () => $('#recent-searches')?.remove();
+function showRecent(input) {
+  hideRecent();
+  const list = settings.app.recentSearches || []; if (!list.length || input.value.trim()) return;
+  const form = input.closest('form');
+  form.insertAdjacentHTML('beforeend', `<div id="recent-searches" class="recent-searches" role="listbox"><div class="rs-head"><span>Recent searches</span><button type="button" data-rs-clear>Clear</button></div>${list.map((q) => `<button type="button" class="rs-item" data-rs="${esc(q)}">${icon('search')}<span>${esc(q)}</span></button>`).join('')}</div>`);
+}
+document.addEventListener('focusin', (e) => { if (e.target.matches?.('#top-search input')) showRecent(e.target); });
+document.addEventListener('input', (e) => { if (e.target.matches?.('#top-search input')) { if (e.target.value.trim()) hideRecent(); else showRecent(e.target); } });
+document.addEventListener('mousedown', (e) => {
+  const item = e.target.closest?.('[data-rs]');
+  if (item) { e.preventDefault(); const q = item.dataset.rs; const inp = $('#top-search input'); if (inp) inp.value = q; rememberSearch(q); hideRecent(); inp?.blur(); go(`/search/${encodeURIComponent(q)}`); return; }
+  if (e.target.closest?.('[data-rs-clear]')) { e.preventDefault(); settings.app.recentSearches = []; save(); hideRecent(); return; }
+  if (!e.target.closest?.('#top-search')) hideRecent();
+});
+document.addEventListener('focusout', (e) => { if (e.target.matches?.('#top-search input')) setTimeout(() => { if (!document.activeElement?.closest('#top-search')) hideRecent(); }, 120); });
+
+// Back to top on long pages
+(() => {
+  const app = document.getElementById('app'); if (!app) return;
+  const btn = document.createElement('button'); btn.className = 'to-top'; btn.title = 'Back to top'; btn.innerHTML = icon('up');
+  btn.onclick = () => app.scrollTo({ top: 0, behavior: 'smooth' });
+  document.body.appendChild(btn);
+  let raf = 0;
+  app.addEventListener('scroll', () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; btn.classList.toggle('show', app.scrollTop > 1400); }); }, { passive: true });
+})();
+
+// Mark rows that continue past an edge, so that edge dissolves instead of cutting cards off
+(() => {
+  const app = document.getElementById('app'); if (!app) return;
+  const edge = (strip) => { const sh = strip.parentElement; if (!sh?.classList.contains('shelf')) return; const max = strip.scrollWidth - strip.clientWidth; sh.classList.toggle('more-l', strip.scrollLeft > 4); sh.classList.toggle('more-r', strip.scrollLeft < max - 4); };
+  let raf = 0;
+  const all = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; app.querySelectorAll('.shelf>.strip').forEach(edge); }); };
+  app.addEventListener('scroll', (e) => { if (e.target.classList?.contains('strip')) edge(e.target); }, { passive: true, capture: true });
+  new MutationObserver(all).observe(app, { childList: true, subtree: true });
+  addEventListener('resize', all); all();
+})();

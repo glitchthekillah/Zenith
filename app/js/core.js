@@ -10,7 +10,7 @@ const KEY = 'zenith';
 const defaults = {
   theme: 'dark', accent: '#e8a33d',
   servers: { jellyfin: null, kavita: null, seerr: null, ask: null }, // { url, token, userId, name, ... }
-  playback: { nativeAudio: true, directPlay: true, maxBitrate: 0, autoplayNext: true, skipIntro: true, subtitles: 'smart', subtitleSize: 100, subPreset: 'zenith', subColor: '#ffffff', subOpacity: 100, subFont: 'sans', subWeight: 600, subEdge: 'shadow', subBg: 'line', subBgColor: '#000000', subBgOpacity: 55, subPos: 6, sv: 1, volume: 1, rate: 1, audioLang: 'eng', subLang: 'eng' },
+  playback: { skipBack: 10, skipFwd: 10, nativeAudio: true, directPlay: true, maxBitrate: 0, autoplayNext: true, skipIntro: true, subtitles: 'smart', subtitleSize: 100, subPreset: 'zenith', subColor: '#ffffff', subOpacity: 100, subFont: 'sans', subWeight: 600, subEdge: 'shadow', subBg: 'line', subBgColor: '#000000', subBgOpacity: 55, subPos: 6, sv: 1, volume: 1, rate: 1, audioLang: 'eng', subLang: 'eng' },
   reader: { mode: 'paged', direction: 'ltr', fit: 'height', bookFont: 19, bookTheme: 'dark' },
   app: { covers: true, rewatch: true, liveSky: true, discord: true, notify: true, miniOnBlur: false, startPage: 'home' },
   // Only on this device: never sent to any server
@@ -186,12 +186,18 @@ export async function render() {
 window.addEventListener('hashchange', render);
 
 // ── UI helpers ─────────────────────────────────────────────────────────
-export function toast(msg, kind = '') {
+export function toast(msg, kind = '', undo = null) {
   const t = document.createElement('div');
   t.className = `toast ${kind}`; t.setAttribute('role', 'status'); t.textContent = msg;
+  const life = undo ? 5500 : 3800;
+  if (undo) {
+    const b = document.createElement('button'); b.className = 'toast-undo'; b.textContent = 'Undo';
+    b.onclick = async () => { b.disabled = true; try { await undo(); t.remove(); } catch { b.disabled = false; } };
+    t.append(b);
+  }
   $('#toasts').append(t);
-  setTimeout(() => t.classList.add('out'), 3800);
-  setTimeout(() => t.remove(), 4300);
+  setTimeout(() => t.classList.add('out'), life);
+  setTimeout(() => t.remove(), life + 500);
 }
 export const errorBox = (e, retry = true) => `<div class="empty"><h2>Something went wrong</h2><p>${esc(e?.message || e)}</p>${retry ? '<button class="btn" data-act="reload">Try again</button>' : ''}</div>`;
 export const loading = (n = 12, kind = 'poster') => `<div class="grid ${kind}">${Array.from({ length: n }, () => `<div class="card skeleton"><div class="art"></div><div class="line"></div></div>`).join('')}</div>`;
@@ -217,7 +223,7 @@ export const debounce = (fn, ms = 250) => { let t; return (...a) => { clearTimeo
 
 // Icons: 24px line icons
 const P = {
-  home: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z', film: 'M4 4h16v16H4z M8 4v16 M16 4v16 M4 8h4 M4 12h4 M4 16h4 M16 8h4 M16 12h4 M16 16h4',
+  home: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z', up: 'M12 19V5 M5 12l7-7 7 7', film: 'M4 4h16v16H4z M8 4v16 M16 4v16 M4 8h4 M4 12h4 M4 16h4 M16 8h4 M16 12h4 M16 16h4',
   tv: 'M3 6h18v12H3z M8 21h8 M12 18v3', film: 'M4 4h16v16H4z M8 4v16 M16 4v16 M4 9h4 M4 15h4 M16 9h4 M16 15h4', stack: 'M12 3l9 5-9 5-9-5z M3 13l9 5 9-5', spark: 'M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z', book: 'M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-2H4z M20 4h-4a3 3 0 0 0-3 3v14a4 4 0 0 1 4-2h3z',
   search: 'M21 21l-5-5 M18 10a8 8 0 1 0-16 0 8 8 0 0 0 16 0', plus: 'M12 5v14 M5 12h14', x: 'M6 6l12 12 M18 6L6 18', check: 'M5 12l4 4L19 6',
   play: 'M7 4.5v15l13-7.5z', pause: 'M7 4h3.5v16H7z M13.5 4H17v16h-3.5z', heart: 'M12 20s-7-4.4-9.3-9A5 5 0 0 1 12 6a5 5 0 0 1 9.3 5c-2.3 4.6-9.3 9-9.3 9z',

@@ -30,6 +30,7 @@ export const upcoming = (page = 1) => api(`/discover/movies/upcoming?page=${page
 export const search = (term, page = 1) => api(`/search?query=${q(term)}&page=${page}&language=en`);
 export const movie = (id) => api(`/movie/${id}`);
 export const tv = (id) => api(`/tv/${id}`);
+export const ratings = (type, id) => api(`/${type}/${id}/${type === 'movie' ? 'ratingscombined' : 'ratings'}`).catch(() => ({}));
 export function request(mediaType, tmdbId, seasons) {
   const body = { mediaType, mediaId: Number(tmdbId) };
   if (mediaType === 'tv') body.seasons = seasons?.length ? seasons : 'all';

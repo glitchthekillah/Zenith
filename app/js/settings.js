@@ -135,6 +135,8 @@ document.addEventListener('click', async (e) => {
 });
 const skyInputs = () => { const c = skyColors(); $$('[data-sky]').forEach((i) => { i.value = c[Number(i.dataset.sky)]; }); };
 document.addEventListener('input', (e) => {
+  const num = e.target.closest('[data-num]');
+  if (num) { const [g, k] = num.dataset.num.split('.'); settings[g][k] = Number(num.value); save(); num.nextElementSibling.textContent = num.value + 's'; return; }
   const ss = e.target.closest('[data-substyle]');
   const sc = e.target.closest('[data-subcolor]');
   if (sc) { settings.playback.subColor = sc.value; settings.playback.subPreset = 'custom'; sc.parentElement.parentElement.querySelectorAll('.sub-swatch').forEach((x) => x.classList.toggle('on', x === sc.parentElement)); save(); const pv = $('#sub-preview'); if (pv) applySubStyle(pv); return; }
@@ -220,6 +222,7 @@ route('settings', async (sub) => {
       ${group('Video', `<div class="set-row"><div><b>Direct play only</b><small>Original file and quality. No server transcoding or remuxing. Unsupported formats show an explanation.</small></div></div>
       ${desktop && /Win/i.test(navigator.platform) ? sw('playback.nativeAudio', 'Windows app audio', 'Plays decoded audio through Zenith so Discord can capture sound when sharing this app window. Changes apply to the next playback.') : ''}
       ${sw('playback.autoplayNext', 'Play the next episode automatically')}
+      ${['skipBack', 'skipFwd'].map((k) => `<label class="set-row"><div><b>${k === 'skipBack' ? 'Skip back' : 'Skip forward'}</b><small>Seconds jumped by the ${k === 'skipBack' ? 'back' : 'forward'} button and arrow key</small></div><span class="range-row"><input type="range" min="1" max="60" step="1" value="${p[k] ?? 10}" data-num="playback.${k}"><output>${p[k] ?? 10}s</output></span></label>`).join('')}
       ${sw('playback.skipIntro', 'Skip intros automatically', 'Needs intro markers on the server (Jellyfin 10.10 or the Intro Skipper plugin).')}`)}
 `)}
     ${pane('subs', 'Language and subtitles', 'Which audio you hear, when subtitles come on, and how they look.', `

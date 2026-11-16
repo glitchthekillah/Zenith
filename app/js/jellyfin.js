@@ -64,6 +64,14 @@ export async function signOut() { try { await api('/Sessions/Logout', { method: 
 const FIELDS = 'PrimaryImageAspectRatio,Overview,Genres,CommunityRating,OfficialRating,ProductionYear,RunTimeTicks,UserData,ChildCount,SeriesInfo,ParentId,ImageTags,BackdropImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,EndDate,Status,ProviderIds,ProductionLocations,Tags';
 const U = () => `/Users/${S().userId}`;
 export const views = () => api(`${U()}/Views`).then((r) => r.Items || []);
+// Put a saved position back (used by Undo after removing something from Continue watching)
+export const setPosition = (id, ticks) => api(`/UserItems/${id}/UserData?userId=${S().userId}`, { method: 'POST', body: { PlaybackPositionTicks: ticks, Played: false } });
+// Find a title on this server by its TMDB id (falls back to name + year)
+export async function findTmdb(type, tmdb, title, year) {
+  const r = await api(`${U()}/Items?searchTerm=${encodeURIComponent(title)}&IncludeItemTypes=${type === 'movie' ? 'Movie' : 'Series'}&Recursive=true&Fields=ProviderIds,ProductionYear&Limit=20`);
+  const list = r.Items || [];
+  return list.find((x) => String(x.ProviderIds?.Tmdb || '') === String(tmdb)) || list.find((x) => x.Name?.toLowerCase() === String(title).toLowerCase() && (!year || String(x.ProductionYear) === String(year))) || null;
+}
 export const upcoming = (limit = 20) => api(`/Shows/Upcoming?UserId=${S().userId}&Limit=${limit}&Fields=${FIELDS}&EnableImageTypes=Primary,Backdrop,Thumb`).then((r) => r.Items || []);
 export const resume = (limit = 16) => api(`${U()}/Items/Resume?Limit=${limit}&MediaTypes=Video&Fields=${FIELDS}&EnableImageTypes=Primary,Backdrop,Thumb`).then((r) => r.Items || []);
 export const nextUp = (limit = 16, seriesId = '') => api(`/Shows/NextUp?UserId=${S().userId}&Limit=${limit}&Fields=${FIELDS}${seriesId ? `&SeriesId=${seriesId}` : ''}&EnableResumable=false&EnableRewatching=${settings.app.rewatch !== false}`).then((r) => r.Items || []);
@@ -71,7 +79,7 @@ export const latest = (parentId, limit = 18) => api(`${U()}/Items/Latest?ParentI
 export const item = (id) => api(`${U()}/Items/${id}?Fields=${FIELDS},People,MediaSources,MediaStreams,Chapters,Studios,Taglines,ExternalUrls,RemoteTrailers,Trickplay`);
 export const similar = (id) => api(`/Items/${id}/Similar?UserId=${S().userId}&Limit=12&Fields=${FIELDS}`).then((r) => r.Items || []);
 export const seasons = (seriesId) => api(`/Shows/${seriesId}/Seasons?UserId=${S().userId}&Fields=${FIELDS}`).then((r) => r.Items || []);
-export const episodes = (seriesId, seasonId) => api(`/Shows/${seriesId}/Episodes?UserId=${S().userId}&SeasonId=${seasonId}&Fields=${FIELDS},MediaSources,Trickplay`).then((r) => r.Items || []);
+export const episodes = (seriesId, seasonId) => api(`/Shows/${seriesId}/Episodes?UserId=${S().userId}${seasonId ? `&SeasonId=${seasonId}` : ''}&Fields=${FIELDS},MediaSources,Trickplay`).then((r) => r.Items || []);
 export const allEpisodes = (seriesId) => api(`/Shows/${seriesId}/Episodes?UserId=${S().userId}&Fields=${FIELDS}`).then((r) => r.Items || []);
 export function items({ parentId = '', types = '', sort = 'SortName', order = 'Ascending', start = 0, limit = 60, filters = '', genres = '', search = '', recursive = true, years = '', provider = '' } = {}) {
   const q = new URLSearchParams({ Recursive: recursive, Fields: FIELDS, SortBy: sort, SortOrder: order, StartIndex: start, Limit: limit, EnableImageTypes: 'Primary,Backdrop,Thumb', ImageTypeLimit: 1 });
@@ -149,9 +157,11 @@ function streamProfile() {
   const ok = (m) => { try { return MediaSource.isTypeSupported(m); } catch { return false; } };
   const video = [['h264','video/mp4; codecs="avc1.640028"'],['hevc','video/mp4; codecs="hvc1.2.4.L120.90"'],['av1','video/mp4; codecs="av01.0.08M.10"']].filter(([,m])=>ok(m)).map(([c])=>c);
   const audio = [['aac','audio/mp4; codecs="mp4a.40.2"'],['ac3','audio/mp4; codecs="ac-3"'],['eac3','audio/mp4; codecs="ec-3"'],['mp3','audio/mp4; codecs="mp3"'],['opus','audio/mp4; codecs="opus"'],['flac','audio/mp4; codecs="flac"']].filter(([,m])=>ok(m)).map(([c])=>c);
+  // Linux's engine says yes to AC3/EAC3/Opus/FLAC in streams but often can't actually play them: AAC only there
+  const safeAudio = linuxStream() ? audio.filter((c) => c === 'aac' || c === 'mp3') : audio;
   return {
     MaxStreamingBitrate: 2_000_000_000, MaxStaticBitrate: 2_000_000_000, DirectPlayProfiles: [], ContainerProfiles: [], CodecProfiles: [],
-    TranscodingProfiles: [{Container:'mp4',Type:'Video',Protocol:'hls',VideoCodec:video.join(','),AudioCodec:audio.join(',')||'aac',Context:'Streaming',MinSegments:1,BreakOnNonKeyFrames:true}],
+    TranscodingProfiles: [{Container:'mp4',Type:'Video',Protocol:'hls',VideoCodec:video.join(','),AudioCodec:safeAudio.join(',')||'aac',Context:'Streaming',MinSegments:1,BreakOnNonKeyFrames:true}],
     SubtitleProfiles: ['vtt','srt','ass','ssa','subrip'].map(Format=>({Format,Method:'External'})),
   };
 }
@@ -172,8 +182,8 @@ async function streamPlayback(id, { audioIndex, start = 0, sourceId } = {}) {
   return finish(id, info, src, S().url + src.TranscodingUrl, true, 'Direct stream');
 }
 
-export async function playback(id, { audioIndex, subIndex, start = 0, maxBitrate, forceTranscode = false, sourceId, clientAudio = false, burnSub = false } = {}) {
-  if (linuxStream()) {
+export async function playback(id, { audioIndex, subIndex, start = 0, maxBitrate, forceTranscode = false, sourceId, clientAudio = false, burnSub = false, stream = false } = {}) {
+  if (linuxStream() || stream) {
     return streamPlayback(id, { audioIndex, start, sourceId });
   }
   if (burnSub) throw new Error('These image subtitles require server conversion. Choose text subtitles or turn subtitles off for direct play.');
@@ -187,7 +197,10 @@ export async function playback(id, { audioIndex, subIndex, start = 0, maxBitrate
   const src = info.MediaSources?.[0];
   if (!src) throw new Error('This item has no playable file.');
   const base = S().url, token = S().token;
-  if (!src.SupportsDirectPlay) {
+  // Not playable as is (often the audio, like EAC3/DTS/TrueHD): let the server repackage it.
+  // The picture is copied untouched; only audio this app can't decode is converted.
+  if (!src.SupportsDirectPlay) return streamPlayback(id, { audioIndex, start, sourceId });
+  if (false) {
     const formats = [src.Container, ...(src.MediaStreams || []).filter(s=>s.Type==='Video'||s.Type==='Audio').map(s=>s.Codec)].filter(Boolean).join(' / ');
     throw new Error(`This original file cannot direct play on this device${formats ? ` (${formats})` : ''}. Server transcoding is disabled.`);
   }

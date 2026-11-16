@@ -54,10 +54,10 @@ export async function search(q, kind = 'all') {
 }
 export async function title(type, id) {
   if (provider() === 'ask') return ask(`/api/title?type=${type}&id=${id}`);
-  const d = type === 'movie' ? await seerr.movie(id) : await seerr.tv(id);
+  const [d, r] = await Promise.all([type === 'movie' ? seerr.movie(id) : seerr.tv(id), seerr.ratings(type, id)]);
   const base = fromSeerr({ ...d, mediaType: type });
   const seasonStatus = new Map((d.mediaInfo?.seasons || []).map((s) => [s.seasonNumber, s.status]));
-  return { ...base, genres: (d.genres || []).map((g) => g.name).slice(0, 4), runtime: d.runtime || d.episodeRunTime?.[0] || null, tagline: d.tagline || '',
+  return { ...base, extra: extraInfo(d, r), genres: (d.genres || []).map((g) => g.name).slice(0, 4), runtime: d.runtime || d.episodeRunTime?.[0] || null, tagline: d.tagline || '',
     seasons: type === 'tv' ? (d.seasons || []).filter((s) => s.seasonNumber > 0).map((s) => ({ n: s.seasonNumber, name: s.name, episodes: s.episodeCount || 0, status: ST[seasonStatus.get(s.seasonNumber)] || 'none' })) : [] };
 }
 export const readingTitle = (x) => ask(`/api/reading-title?${new URLSearchParams({ key: x.key || '', type: x.type, title: x.title, workId: x.workId || '' })}`);
@@ -81,3 +81,20 @@ export async function mine() {
   return { items: out };
 }
 export const STATUS = { none: '', pending: 'Waiting for approval', requested: 'Requested', partial: 'Partly here', available: 'Available', declined: 'Declined', approved: 'Approved', failed: 'Failed' };
+
+// The same detail the ask site sends: people, facts, trailer and outside ratings
+function extraInfo(d, r = {}) {
+  const crew = d.credits?.crew || [], jobs = (re) => [...new Set(crew.filter((c) => re.test(c.job || '')).map((c) => c.name))].slice(0, 3);
+  const vids = d.relatedVideos || [], vid = vids.find((v) => v.type === 'Trailer' && v.site === 'YouTube') || vids.find((v) => v.site === 'YouTube');
+  const rt = r.rt || (r.criticsScore != null ? r : null);
+  return {
+    cast: (d.credits?.cast || []).slice(0, 14).map((c) => ({ name: c.name, role: c.character || '', photo: c.profilePath ? TMDB + 'w185' + c.profilePath : '' })),
+    directors: jobs(/^Director$/), writers: jobs(/^(Screenplay|Writer|Story|Novel)$/), creators: (d.createdBy || []).map((c) => c.name).slice(0, 3),
+    status: d.status || '', released: d.releaseDate || d.firstAirDate || '', lastAired: d.lastAirDate || '', language: d.originalLanguage || '',
+    budget: d.budget || 0, revenue: d.revenue || 0, studios: (d.productionCompanies || []).map((c) => c.name).slice(0, 4), networks: (d.networks || []).map((c) => c.name).slice(0, 3),
+    countries: (d.productionCountries || []).map((c) => c.name).slice(0, 3), seasonsCount: d.numberOfSeasons || 0, episodesCount: d.numberOfEpisodes || 0,
+    collection: d.collection?.name || '', keywords: (d.keywords || []).map((k) => k.name).slice(0, 10),
+    trailer: vid ? `https://www.youtube.com/watch?v=${vid.key}` : '', imdbId: d.externalIds?.imdbId || d.imdbId || '', homepage: d.homepage || '',
+    ratings: { rt: rt?.criticsScore != null ? { critics: rt.criticsScore, audience: rt.audienceScore, fresh: rt.criticsRating } : null, imdb: r.imdb?.criticsScore ?? null },
+  };
+}

@@ -1,5 +1,6 @@
 // Request pages: browse, search, a title's request page, and "My requests".
-import { $, $$, esc, icon, route, go, defer, toast, settings, save, desktop, modal, loading } from './core.js';
+import { $, $$, esc, icon, route, go, defer, toast, settings, save, desktop, modal, loading, groups, render } from './core.js';
+import * as jf from './jellyfin.js';
 import { categoryTabs, groupedResults, kindOf, validCategory } from './categories.js';
 import * as rq from './requests.js';
 import { requestCard, needServer } from './watch.js';
@@ -72,7 +73,10 @@ route('request-search', (q = '', category = 'all') => {
 route('request-item', async (type, id) => {
   if (!rq.provider()) return needServer('a request server');
   if (['book', 'manga', 'comic'].includes(type)) return readingItem(type, id);
-  const d = await rq.title(type, id);
+  // Which request server: every server group that has one; the choice is remembered while browsing
+  const reqGroups = settings.groups.filter((g) => g.servers?.ask?.name || g.servers?.seerr);
+  const reqG = reqGroups.find((g) => g.id === reqTo) || reqGroups.find((g) => g.id === groups.active().id) || reqGroups[0] || groups.active();
+  const d = await groups.run(reqG, () => rq.title(type, id));
   const tv = type === 'tv';
   const open = (d.seasons || []).filter((s) => !s.status || s.status === 'none');
   const html = `<div class="detail">${d.backdrop ? `<div class="backdrop"><img src="${esc(d.backdrop)}" alt=""></div>` : ''}<div class="detail-in"><div class="art">${d.poster ? `<img src="${esc(d.poster)}" alt="">` : ''}</div><div>
@@ -81,8 +85,10 @@ route('request-item', async (type, id) => {
     <p class="overview">${esc(d.overview || '')}</p>
     ${tv && d.seasons?.length ? `<div class="row-head"><h3 style="font-size:17px">Seasons</h3><button class="btn small" data-pickall>Pick all</button></div><div class="sgrid">${d.seasons.map((s) => `<button class="season ${!s.status || s.status === 'none' ? 'on' : ''}" data-season="${s.n}" ${s.status && s.status !== 'none' ? 'disabled' : ''}><b>${esc(s.name || `Season ${s.n}`)}</b><small>${s.status && s.status !== 'none' ? esc(rq.STATUS[s.status] || s.status) : `${s.episodes} episodes`}</small></button>`).join('')}</div>` : ''}
     ${d.quality?.list?.length ? `<label class="lab" style="max-width:280px;margin:10px 0">Quality<select data-quality>${d.quality.list.map((q) => `<option value="${q.id}" ${q.id === d.quality.def ? 'selected' : ''}>${esc(q.name)}</option>`).join('')}</select></label>` : ''}
-    <div class="acts" style="margin-top:12px">${d.status === 'available' ? `<span class="state available">Already on the server</span><a class="btn" href="#/search/${encodeURIComponent(d.title)}">Find it to watch</a>` : (tv && !open.length) || (!tv && d.status !== 'none') ? `<span class="state ${esc(d.status)}">${esc(rq.STATUS[d.status] || 'Requested')}</span>` : `<button class="btn gold big" data-send='${esc(JSON.stringify({ type, id: d.id }))}'>${icon('plus')} Request</button>`}</div>
-  </div></div></div>`;
+    ${reqGroups.length > 1 ? `<div class="req-to"><span>Request on</span>${reqGroups.map((g) => `<button class="${g.id === reqG.id ? 'on' : ''}" data-req-to="${esc(g.id)}">${esc(groups.nameOf(g))}</button>`).join('')}<small>Each server has its own quality options and status</small></div>` : ''}
+    ${defer(() => watchOn(type, id, d))}
+    <div class="acts" data-req-g="${esc(reqG.id)}" style="margin-top:12px">${d.status === 'available' ? `<span class="state available">Already on the server</span><a class="btn" href="#/search/${encodeURIComponent(d.title)}">Find it to watch</a>` : (tv && !open.length) || (!tv && d.status !== 'none') ? `<span class="state ${esc(d.status)}">${esc(rq.STATUS[d.status] || 'Requested')}</span>` : `<button class="btn gold big" data-send='${esc(JSON.stringify({ type, id: d.id }))}'>${icon('plus')} Request</button>`}</div>
+  </div></div></div>${extraHtml(d.extra, tv)}`;
   return html;
 });
 async function readingItem(type, id) {
@@ -111,7 +117,8 @@ document.addEventListener('click', async (e) => {
   }
   const q = $('[data-quality]'); if (q) payload.profile = Number(q.value);
   b.disabled = true; const was = b.innerHTML; b.textContent = 'Requesting...';
-  try { const r = await rq.request(payload); toast(r.msg || 'Requested', 'ok'); b.outerHTML = `<span class="state pending">${esc(rq.STATUS[r.status] || 'Requested')}</span>`; }
+  const rg = groups.byId(b.closest('[data-req-g]')?.dataset.reqG) || groups.active();
+  try { const r = await groups.run(rg, () => rq.request(payload)); toast(r.msg || 'Requested', 'ok'); b.outerHTML = `<span class="state pending">${esc(rq.STATUS[r.status] || 'Requested')}</span>`; }
   catch (err) { toast(err.message, 'bad'); b.disabled = false; b.innerHTML = was; }
 });
 
@@ -141,3 +148,36 @@ async function checkArrivals() {
 setTimeout(checkArrivals, 15000);
 setInterval(checkArrivals, 10 * 60 * 1000);
 export { go, modal };
+
+// ── Request page extras ──
+let reqTo = null;
+document.addEventListener('click', (e) => { const b = e.target.closest?.('[data-req-to]'); if (!b) return; reqTo = b.dataset.reqTo; render(); });
+// "Watch on …": the title is already on one of your servers
+async function watchOn(type, id, d) {
+  const found = (await Promise.all(groups.with('jellyfin').map((g) => groups.run(g, () => jf.findTmdb(type, id, d.title, d.year)).then((it) => (it ? { g, it } : null)).catch(() => null)))).filter(Boolean);
+  if (!found.length) return '';
+  return `<div class="watch-on"><span class="state available">${icon('check')} On your servers</span>${found.map(({ g, it }) => `<a class="btn gold" href="#/item/${it.Id}${settings.groups.length > 1 ? '@' + g.id : ''}">${icon('play')} Watch on ${esc(groups.nameOf(g))}</a>`).join('')}</div>`;
+}
+const money = (n) => n >= 1e9 ? `$${(n / 1e9).toFixed(1)}B` : n >= 1e6 ? `$${Math.round(n / 1e6)}M` : n ? `$${n.toLocaleString()}` : '';
+const langName = (c) => { try { return new Intl.DisplayNames(['en'], { type: 'language' }).of(c); } catch { return c; } };
+function extraHtml(x, tv) {
+  if (!x) return '';
+  const date = (s) => s ? new Date(s + 'T12:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  const facts = [
+    ['Status', x.status], [tv ? 'First aired' : 'Released', date(x.released)], tv && x.lastAired ? ['Last aired', date(x.lastAired)] : null,
+    tv && x.seasonsCount ? ['Seasons', `${x.seasonsCount} (${x.episodesCount} episodes)`] : null,
+    [tv ? 'Created by' : 'Directed by', (tv ? x.creators : x.directors).join(', ')], ['Written by', (x.writers || []).join(', ')],
+    ['Original language', x.language ? langName(x.language) : ''], [tv ? 'Network' : 'Studio', (tv && x.networks.length ? x.networks : x.studios).join(', ')],
+    ['Country', (x.countries || []).join(', ')], ['Budget', money(x.budget)], ['Box office', money(x.revenue)], ['Collection', x.collection],
+  ].filter((f) => f && f[1]);
+  const r = x.ratings || {};
+  const chips = [r.rt ? `<span class="rating-chip rt"><b>${r.rt.critics}%</b><small>Rotten Tomatoes</small></span>` : '', r.rt?.audience != null ? `<span class="rating-chip"><b>${r.rt.audience}%</b><small>Audience</small></span>` : '', r.imdb != null ? `<span class="rating-chip imdb"><b>${Number(r.imdb).toFixed(1)}</b><small>IMDb</small></span>` : ''].join('');
+  const links = [x.trailer ? `<button class="btn" data-open="${esc(x.trailer)}">${icon('film')} Trailer</button>` : '', x.imdbId ? `<button class="btn" data-open="https://www.imdb.com/title/${esc(x.imdbId)}">IMDb</button>` : '', x.homepage ? `<button class="btn" data-open="${esc(x.homepage)}">Website</button>` : ''].join('');
+  const cast = (x.cast || []).map((c) => `<div class="person"><div class="face">${c.photo ? `<img loading="lazy" src="${esc(c.photo)}" alt="">` : ''}</div><b>${esc(c.name)}</b><small>${esc(c.role)}</small></div>`).join('');
+  return `<section class="req-more">
+    ${chips || links ? `<div class="req-links">${chips}${links}</div>` : ''}
+    ${facts.length ? `<dl class="req-facts">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}
+    ${cast ? `<section class="row"><div class="row-head"><h3>Cast</h3></div><div class="shelf"><button class="arrow l" data-scroll="-1" aria-label="Scroll left">${icon('back')}</button><div class="strip people">${cast}</div><button class="arrow r" data-scroll="1" aria-label="Scroll right">${icon('next')}</button></div></section>` : ''}
+    ${x.keywords?.length ? `<div class="req-tags">${x.keywords.map((k) => `<span>${esc(k)}</span>`).join('')}</div>` : ''}
+  </section>`;
+}

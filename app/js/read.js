@@ -48,7 +48,7 @@ route('series', async (id) => {
   const covers = own.length ? Array.from({ length: 9 }, (_, i) => own[i % own.length]) : [kv.cover(id)];
   const banner = al?.banner
     ? `<div class="backdrop"><img src="${esc(al.banner)}" alt=""></div>`
-    : `<div class="backdrop collage">${covers.map((u) => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</div>`;
+    : `<div class="backdrop collage"><div class="collage-in">${covers.map((u) => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</div></div>`;
   const facts = [meta?.releaseYear || al?.year || '', al?.status || '', al?.score ? `<span class="star">${icon('star')} ${(al.score / 10).toFixed(1)}</span>` : '', volCount ? plural(volCount, "volume") : plural(chapters.length, 'chapter'), plural(s.pages || 0, 'page')].filter(Boolean);
   return `<div class="detail">${banner}
   <div class="detail-in"><div class="art"><img src="${esc(kv.cover(id))}" alt=""></div><div>
