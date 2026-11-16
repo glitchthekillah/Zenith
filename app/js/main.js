@@ -214,3 +214,35 @@ document.addEventListener('focusout', (e) => { if (e.target.matches?.('#top-sear
   addEventListener('resize', all); all();
 })();
 
+
+// Our own dropdown for the audio and subtitle pickers: styled like the app, never wider than the
+// screen, long names cut with an ellipsis (full name on hover)
+(() => {
+  let menu = null, owner = null, openedAt = 0;
+  const close = () => { menu?.remove(); menu = null; owner?.closest('.pp')?.classList.remove('open'); owner = null; };
+  const open = (sel) => {
+    close(); owner = sel; openedAt = performance.now(); sel.closest('.pp')?.classList.add('open');
+    menu = document.createElement('div'); menu.className = 'zmenu'; menu.setAttribute('role', 'listbox');
+    menu.innerHTML = [...sel.options].map((o, i) => `<button type="button" role="option" class="${o.selected ? 'on' : ''}" data-i="${i}" title="${o.text.replace(/"/g, '&quot;')}">${o.text.replace(/</g, '&lt;')}</button>`).join('');
+    document.body.appendChild(menu);
+    const r = (sel.closest('.pp') || sel).getBoundingClientRect(), m = menu.getBoundingClientRect();
+    const left = Math.max(8, Math.min(r.left, innerWidth - m.width - 8));
+    const below = r.bottom + 6 + m.height < innerHeight - 8;
+    menu.style.left = left + 'px';
+    menu.style.top = (below ? r.bottom + 6 : Math.max(8, r.top - 6 - m.height)) + 'px';
+    const on = menu.querySelector('.on'); if (on) menu.scrollTop = Math.max(0, on.offsetTop - 6);
+  };
+  document.addEventListener('mousedown', (e) => {
+    const sel = e.target.closest('.pp select');
+    if (sel) { e.preventDefault(); sel.focus({ preventScroll: true }); return menu && owner === sel ? close() : open(sel); }
+    if (menu && !menu.contains(e.target)) close();
+  }, true);
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.zmenu [data-i]'); if (!b || !owner) return;
+    const sel = owner; sel.selectedIndex = Number(b.dataset.i); close();
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && menu) { e.stopPropagation(); close(); } }, true);
+  addEventListener('resize', close); addEventListener('hashchange', close);
+  document.addEventListener('scroll', (e) => { if (menu && !menu.contains(e.target) && performance.now() - openedAt > 200) close(); }, true);
+})();
