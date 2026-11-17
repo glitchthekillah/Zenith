@@ -1,6 +1,10 @@
 # Zenith
 
-Watch, read and request from your own servers, in one app.
+**Zenith is a free desktop app for Jellyfin, Kavita and Seerr.** Watch your movies and shows, read your books and manga, and request new titles, all from one app on Windows and Linux. It's a faster, nicer-looking Jellyfin client with a built-in reader and requests, and it talks only to the servers you sign in to.
+
+**Website:** https://zenithapp.glitchthekillah.com/ · **Download:** [latest release](https://github.com/glitchthekillah/Zenith/releases/latest) · **Help:** [support Discord](https://discord.gg/4ju5pj5HDW)
+
+![Zenith home screen with a rotating spotlight, continue watching and personal picks](docs/screenshots/home.jpg)
 
 Zenith connects to the servers you (or a friend) already run:
 
@@ -26,6 +30,16 @@ On Bazzite and other immutable systems, use the AppImage. Gear Lever (from Flath
 On Linux, video plays through GStreamer. If HEVC (H.265) files won't direct play, install your distro's `gstreamer1.0-libav` (or `gst-libav`) package, or Zenith asks the server to convert them.
 
 Coming from the old Electron version? Your settings and sign-ins move over by themselves on first launch. Uninstall the old version afterwards.
+
+## Screenshots
+
+| | |
+| --- | --- |
+| ![Show page with seasons, episodes and resume](docs/screenshots/show.jpg) | ![Video player with chapters, subtitles and picture in picture](docs/screenshots/player.jpg) |
+| ![Movie page with cast, trailer and similar titles](docs/screenshots/movie.jpg) | ![Library with filters, genres and shuffle](docs/screenshots/library.jpg) |
+| ![Search everything as you type](docs/screenshots/search.jpg) | ![Servers: Jellyfin, Kavita and request sites side by side](docs/screenshots/servers.jpg) |
+
+Screenshots use the public [Jellyfin demo server](https://demo.jellyfin.org), which only hosts public domain and openly licensed films.
 
 ## Features
 
