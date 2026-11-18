@@ -15,13 +15,17 @@ const fit = () => {};
 let vis = true;
 
 // ---------- Loader (same as ZenithClipper's) ----------
-let parts = 0; const need = 1;
+// Everything heavy loads behind the loader: the page, every app window and every clip, so nothing
+// mounts or decodes for the first time mid-scroll.
+const VIDS = ['sintel', 'desert', 'bridge', 'fire', 'intro', 'sniper'];
+let parts = 0; const need = 1 + 6 + VIDS.length;
+VIDS.forEach((v) => fetch(`vid/${v}.mp4`).then((r) => r.blob()).catch(() => {}).finally(() => loaded()));
 function loaded() { parts++; }
-addEventListener('load', () => loaded(1));
+const ready = () => parts + (document.readyState === 'complete' ? 1 : 0) + $$('iframe.scr').filter((f) => f.src && f.contentDocument?.readyState === 'complete' && f.contentDocument.querySelector('.scene')).length;
 const lbar = $('#ld-bar'); for (let i = 0; i < 20; i++) lbar.appendChild(document.createElement('i'));
 const lbi = $$('i', lbar); let shown = 0; const lt0 = performance.now();
 (function ldTick() {
-  const target = Math.min(1, parts / need), minT = performance.now() - lt0 > (reduce ? 200 : 1500);
+  const target = Math.min(1, ready() / need), minT = performance.now() - lt0 > (reduce ? 200 : 1500);
   const now = performance.now(), dt = Math.min(0.1, (now - (ldTick.t || now)) / 1000); ldTick.t = now;
   shown += ((minT ? target : Math.min(target, 0.9)) - shown) * (1 - Math.exp(-dt * 5.5)); if (target >= 1 && minT && shown > 0.985) shown = 1;
   const k = Math.round(shown * 20); lbi.forEach((b, i) => { b.classList.toggle('on', i < k); b.classList.toggle('head', i === k - 1); });
@@ -29,7 +33,7 @@ const lbi = $$('i', lbar); let shown = 0; const lt0 = performance.now();
   if (shown < 1) return requestAnimationFrame(ldTick);
   setTimeout(start, 200);
 })();
-setTimeout(() => { parts = need; }, 3500);
+setTimeout(() => { parts = need * 2; }, 12000);
 let started = false;
 function start() {
   if (started) return; started = true;
@@ -105,8 +109,8 @@ const cover = () => Math.min(innerWidth / 1920, (innerHeight - 70) / 1200) * 0.9
 function moment(id, dur, build) {
   const sec = $(id), st = $('.mst', sec), scene = sec.dataset.scene, cap = $('.cap', st);
   const f = document.createElement('iframe'); f.className = 'scr'; f.title = 'Zenith ' + scene; f.tabIndex = -1; f.setAttribute('aria-hidden', 'true');
-  st.prepend(f);
-  const mount = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { f.src = `app/tour2.html?s=${scene}&calm`; mount.disconnect(); } }, { rootMargin: '150% 0px' }); mount.observe(sec);
+  st.prepend(f); f.style.visibility = 'hidden';
+  f.src = `app/tour2.html?s=${scene}&calm`;
   const vids = () => [...(f.contentDocument?.querySelectorAll('video') || [])];
   gsap.set(f, { scale: cover() }); addEventListener('resize', () => gsap.set(f, { scale: cover() }));
   ScrollTrigger.create({ trigger: sec, start: 'top bottom', end: 'bottom top', onToggle: (s) => { f.style.visibility = s.isActive ? '' : 'hidden'; vids().forEach((v) => (s.isActive ? v.play().catch(() => {}) : v.pause())); } });
