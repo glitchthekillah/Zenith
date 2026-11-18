@@ -127,6 +127,10 @@ function moment(id, dur, build) {
     ScrollTrigger.refresh();
   });
 }
+// Zoom toward a point without moving transform-origin, so zooming back always re-centres the window.
+// Only part of the way (0.55), and clamped so the window edge never pulls into view.
+const focusX = (p, k, dx = 0) => { const S = cover() * k, v = -(p.x + dx - 960) * S * 0.55, lim = Math.max(0, (1920 * S - innerWidth) / 2); return Math.max(-lim, Math.min(lim, v)); };
+const focusY = (p, k, dy = 0) => { const S = cover() * k, v = -(p.y + dy - 600) * S * 0.55, lim = Math.max(0, (1200 * S - innerHeight) / 2); return Math.max(-lim, Math.min(lim, v)); };
 const swapScene = (doc, n) => doc.querySelectorAll('.scene').forEach((s) => s.classList.toggle('on', s.dataset.s === n));
 const videoize = (doc, img, src) => { if (!img) return null; const v = doc.createElement('video'); v.src = src; v.poster = src.replace('.mp4', '.jpg'); v.muted = true; v.loop = true; v.playsInline = true; v.className = img.className; v.setAttribute('style', (img.getAttribute('style') || '').replace(/background-image:[^;]*;?/, '') + ';width:100%;height:100%;object-fit:cover'); img.replaceWith(v); return v; };
 
@@ -150,7 +154,7 @@ moment('#m-resume', 11, ({ tl, doc, byText, cursor, go, tap, at, f }) => {
   go(tl, you, btn, 3.2, 1.2); if (btn()) tl.to(btn(), { scale: 1.06, duration: 0.3 }, 4.2); tap(tl, you, 5); if (btn()) tl.to(btn(), { scale: 1, duration: 0.2 }, 5.1);
   tl.to(f, { scale: () => cover() * 4, transformOrigin: () => { const p = at(btn()); return `${p.x}px ${p.y}px`; }, opacity: 0, duration: 1.1, ease: 'power3.in' }, 5.6).to(you, { opacity: 0, duration: 0.2 }, 5.6);
   when(tl, 6.7, () => swapScene(doc, 'player'), () => swapScene(doc, 'show'));
-  tl.fromTo(f, { scale: () => cover() * 0.9, opacity: 0 }, { scale: () => cover(), opacity: 1, transformOrigin: '50% 50%', duration: 1.2, ease: 'expo.out', immediateRender: false }, 6.8);
+  tl.fromTo(f, { scale: () => cover() * 0.9, opacity: 0, transformOrigin: '50% 50%' }, { scale: () => cover(), opacity: 1, transformOrigin: '50% 50%', duration: 1.2, ease: 'expo.out', immediateRender: false }, 6.8);
 });
 
 // 03 Player: the intro rolls, you skip it.
@@ -171,12 +175,12 @@ moment('#m-search', 11, ({ tl, q, qa, cursor, go, tap, at, f }) => {
   const field = () => q('input[name=q]'), list = q('#live-search'), rows = qa('.ls-row');
   gsap.set(list, { opacity: 0 }); gsap.set(rows, { opacity: 0, y: -10 }); if (field()) field().value = '';
   const you = cursor('You', '#ff8a4c'), word = 'the';
-  tl.to(f, { scale: () => cover() * 1.45, transformOrigin: () => { const p = at(field()); return `${p.x}px ${p.y + 260}px`; }, duration: 1.4, ease: 'power3.inOut' }, 2.4)
+  tl.to(f, { scale: () => cover() * 1.25, x: () => focusX(at(field()), 1.25), y: () => focusY(at(field(), 0.5, 0.5), 1.25, 200), duration: 1.4, ease: 'power3.inOut' }, 2.4)
     .set(you, { x: 900, y: 500 }, 0).to(you, { opacity: 1, duration: 0.2 }, 3.4);
   go(tl, you, field, 3.6, 0.9, 0.3); tap(tl, you, 4.6);
   for (let k = 1; k <= word.length; k++) when(tl, 4.8 + k * 0.35, () => { if (field()) field().value = word.slice(0, k); }, () => { if (field()) field().value = word.slice(0, k - 1); });
   tl.to(list, { opacity: 1, duration: 0.2 }, 6).to(rows, { opacity: 1, y: 0, stagger: 0.15, duration: 0.5, ease: 'back.out(1.6)' }, 6.1);
-  go(tl, you, () => rows[2], 7.2, 0.9); tl.to(f, { scale: () => cover(), duration: 1.4, ease: 'power3.inOut' }, 8.6).to(you, { opacity: 0, duration: 0.3 }, 9.8);
+  go(tl, you, () => rows[2], 7.2, 0.9); tl.to(f, { scale: () => cover(), x: 0, y: 0, duration: 1.4, ease: 'power3.inOut' }, 8.6).to(you, { opacity: 0, duration: 0.3 }, 9.8);
 });
 
 // 05 Library: the wall tilts flat, one filter, what you've seen falls away.
@@ -198,13 +202,13 @@ moment('#m-friends', 11, ({ tl, doc, S, q, qa, cursor, go, tap, at, f }) => {
   const add = () => q('.srv-add'), card = q('.srv-card');
   const fresh = card?.cloneNode(true); if (fresh) { const nm = fresh.querySelector('.srv-name'); if (nm) { nm.value = "Alex's server"; nm.setAttribute('value', "Alex's server"); } const o = fresh.querySelector('.srv-orb'); if (o) o.textContent = 'A'; const sm = fresh.querySelector('.srv-title small'); if (sm) sm.textContent = '2 of 4 connected'; fresh.style.display = 'none'; add()?.parentNode.insertBefore(fresh, add()); }
   const alex = cursor('Alex', '#8c6bff'), sam = cursor('Sam', '#1fbf8f'), you = cursor('You', '#ff8a4c');
-  tl.to(f, { scale: () => cover() * 1.3, transformOrigin: () => { const p = at(add()); return `${p.x - 200}px ${p.y}px`; }, duration: 1.6, ease: 'power3.inOut' }, 2.2)
+  tl.to(f, { scale: () => cover() * 1.25, x: () => focusX(at(add()), 1.25, -200), y: () => focusY(at(add()), 1.25), duration: 1.6, ease: 'power3.inOut' }, 2.2)
     .set(alex, { x: 1700, y: 600 }, 0).to(alex, { opacity: 1, duration: 0.2 }, 3.2).set(you, { x: 200, y: 1000 }, 0).to(you, { opacity: 1, duration: 0.2 }, 3.4);
   go(tl, alex, add, 3.4, 1.4); go(tl, you, () => card, 3.6, 1.6, 0.3, 0.2); tap(tl, alex, 5);
   when(tl, 5.1, () => { if (fresh) { fresh.style.display = ''; gsap.fromTo(fresh, { opacity: 0, scale: 0.85, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: 'back.out(1.6)' }); gsap.fromTo(fresh, { boxShadow: '0 0 0 3px #8c6bff, 0 0 60px rgba(140,107,255,.6)' }, { boxShadow: '0 0 0 0 rgba(140,107,255,0)', duration: 1.8, delay: 0.5 }); } }, () => { if (fresh) fresh.style.display = 'none'; });
   go(tl, alex, () => fresh, 6, 1, 0.5, 0.25);
   tl.set(sam, { x: 800, y: 1050 }, 0).to(sam, { opacity: 1, duration: 0.2 }, 6.4); go(tl, sam, () => fresh, 6.5, 1.4, 0.7, 0.6);
-  tl.to(f, { scale: () => cover(), duration: 1.4, ease: 'power3.inOut' }, 8.4).to([alex, sam, you], { opacity: 0, duration: 0.3 }, 10);
+  tl.to(f, { scale: () => cover(), x: 0, y: 0, duration: 1.4, ease: 'power3.inOut' }, 8.4).to([alex, sam, you], { opacity: 0, duration: 0.3 }, 10);
 });
 
 // Hide the site's bar while the app's own bar is on screen.
