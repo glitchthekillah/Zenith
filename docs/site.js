@@ -97,7 +97,7 @@ const CSS = '.cx{position:absolute;left:0;top:0;z-index:9999;pointer-events:none
 const states = [];
 const when = (tl, t, on, off) => states.push({ tl, t, on, off, s: null });
 gsap.ticker.add(() => states.forEach((w) => { const now = w.tl.time() >= w.t; if (now !== w.s) { w.s = now; (now ? w.on : w.off)?.(); } }));
-const cover = () => Math.max(innerWidth / 1600, innerHeight / 1000) * 1.02;
+const cover = () => Math.min(innerWidth / 1920, (innerHeight - 70) / 1200) * 0.97;
 
 function moment(id, dur, build) {
   const sec = $(id), st = $('.mst', sec), scene = sec.dataset.scene, cap = $('.cap', st);
