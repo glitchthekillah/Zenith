@@ -56,7 +56,7 @@ glow.position.z = -0.6; rig.add(glow);
 // The ring: posters from the library orbiting the sun, one draw call.
 const COLS = 7, ROWS = 4, COUNT = touch ? 40 : 56;
 const tex = new THREE.TextureLoader().load('posters.jpg', () => loaded(1));
-tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 const pGeo = new THREE.PlaneGeometry(0.62, 0.93, 8, 1);
 const idx = new Float32Array(COUNT), ang = new Float32Array(COUNT);
 for (let i = 0; i < COUNT; i++) { idx[i] = i % 28; ang[i] = i / COUNT * Math.PI * 2; }
@@ -77,7 +77,7 @@ const ringMat = new THREE.ShaderMaterial({
     float col=mod(aIdx,7.),row=floor(aIdx/7.);vU=vec2((uv.x+col)/7.,(uv.y+(3.-row))/4.);
     gl_Position=projectionMatrix*mv;}`,
   fragmentShader: `uniform sampler2D uTex;varying vec2 vU;varying float vD;varying float vF;
-  void main(){vec3 c=texture2D(uTex,vU).rgb;float back=smoothstep(.3,-.6,vF);c*=mix(1.,.28,back);
+  void main(){vec3 c=texture2D(uTex,vU).rgb;float back=smoothstep(.3,-.6,vF);c*=mix(1.,.45,back);
   c=mix(c,vec3(.03,.03,.06),clamp((vD-9.)/8.,0.,.85));gl_FragColor=vec4(c,1.);}`,
 });
 
@@ -96,7 +96,7 @@ scene.add(stars);
 
 // State driven by scroll.
 const wide = innerWidth > 900;
-const S = { camZ: wide ? 9.4 : 11, camY: 0.9, tilt: 0.42, roll: -0.12, spin: 0, spinV: 0.05, x: wide ? 1.9 : 0, y: wide ? -0.15 : 1.5, spread: 0, scale: 1 };
+const S = { camZ: wide ? 9.4 : 11, camY: 0.9, tilt: 0.42, roll: -0.12, spin: 0, spinV: 0.05, x: wide ? 2.5 : 0, y: wide ? -0.15 : 1.5, spread: 0, scale: 1 };
 const size = () => {
   const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
   camera.fov = w < h ? 58 : 38; camera.updateProjectionMatrix(); fit();
@@ -121,17 +121,22 @@ function draw() {
 }
 
 
-// ---------- Loader ----------
-let parts = 0; const need = 2, ldn = $('#ldn'), ldb = $('#ldb'); let shown = 0;
+// ---------- Loader (same as ZenithClipper's) ----------
+let parts = 0; const need = 2;
 function loaded() { parts++; }
 addEventListener('load', () => loaded(1));
-const ldTick = () => {
-  const target = Math.min(100, (parts / need) * 100);
-  shown += (target - shown) * 0.1 + 0.35; shown = Math.min(shown, target);
-  ldn.textContent = String(Math.floor(shown)).padStart(2, '0'); ldb.style.setProperty('--p', shown / 100);
-  if (shown >= 99.5) { ldn.textContent = '100'; setTimeout(start, 300); } else requestAnimationFrame(ldTick);
-};
-ldTick(); setTimeout(() => { parts = need; }, 6000);
+const lbar = $('#ld-bar'); for (let i = 0; i < 20; i++) lbar.appendChild(document.createElement('i'));
+const lbi = $$('i', lbar); let shown = 0; const lt0 = performance.now();
+(function ldTick() {
+  const target = Math.min(1, parts / need), minT = performance.now() - lt0 > (reduce ? 200 : 1500);
+  const now = performance.now(), dt = Math.min(0.1, (now - (ldTick.t || now)) / 1000); ldTick.t = now;
+  shown += ((minT ? target : Math.min(target, 0.9)) - shown) * (1 - Math.exp(-dt * 5.5)); if (target >= 1 && minT && shown > 0.985) shown = 1;
+  const k = Math.round(shown * 20); lbi.forEach((b, i) => { b.classList.toggle('on', i < k); b.classList.toggle('head', i === k - 1); });
+  $('#ld-n').textContent = String(Math.round(shown * 100)).padStart(3, '0') + '%';
+  if (shown < 1) return requestAnimationFrame(ldTick);
+  setTimeout(start, 200);
+})();
+setTimeout(() => { parts = need; }, 3500);
 let started = false;
 function start() {
   if (started) return; started = true;
@@ -181,48 +186,126 @@ const chipTick = (time) => {
 gsap.ticker.add(chipTick);
 ScrollTrigger.create({ trigger: '#story', start: 'top bottom', end: 'bottom top', onToggle: (s) => { storyOn = s.isActive; } });
 
-const app = $('#app'), cam = $('#cam'), focus = $('#focus'), stepEls = $$('.step'), dotEls = $$('#dots i');
-const KEYS = ['home', 'show', 'player', 'search', 'library', 'servers'];
-const REG = { home: [0, 0.72, 0.62, 1], show: [0, 0.08, 0.55, 0.55], player: [0.2, 0.35, 1, 1], search: [0.6, 0, 1, 0.45], library: [0, 0.15, 0.75, 0.65], servers: [0.08, 0.35, 0.6, 0.95] };
-const FOC = { home: [0.01, 0.76, 0.6, 0.995], show: [0.045, 0.43, 0.2, 0.5], player: [0.2, 0.9, 1, 0.99], search: [0.63, 0.04, 0.93, 0.4], library: [0.01, 0.2, 0.74, 0.62], servers: [0.12, 0.42, 0.48, 0.92] };
-const zoom = (k, axis) => () => {
-  const W = app.offsetWidth, H = app.offsetHeight, [x0, y0, x1, y1] = REG[k];
-  const sc = Math.min(1 / (x1 - x0), 1 / (y1 - y0), 2.1);
-  if (axis === 's') return sc;
-  const v = axis === 'x' ? W * 0.5 - sc * ((x0 + x1) / 2) * W : H * 0.5 - sc * ((y0 + y1) / 2) * H;
-  return Math.min(0, Math.max((axis === 'x' ? W : H) * (1 - sc), v));
-};
-const T0 = 7.2, STEP = 2.4;
-const story = gsap.timeline({ defaults: { ease: 'power2.out' }, scrollTrigger: { trigger: '#story', start: 'top top', end: 'bottom bottom', scrub: reduce ? true : 1, invalidateOnRefresh: true,
-  onUpdate: (self) => { const tt = self.progress * story.duration(); const i = Math.max(-1, Math.min(5, Math.floor((tt - T0) / STEP))); dotEls.forEach((d, k) => d.classList.toggle('on', k <= i)); } } });
-gsap.set(cam, { x: 0, y: 0, scale: 1 });
+const story = gsap.timeline({ defaults: { ease: 'power2.out' }, scrollTrigger: { trigger: '#story', start: 'top top', end: 'bottom bottom', scrub: reduce ? true : 1 } });
 chips.forEach((c, i) => story.to(c, { o: 1, duration: 0.6 }, 0.1 + i * 0.25));
 story.to('#pa', { opacity: 0, scale: 0.94, duration: 0.5, ease: 'power2.in' }, 3.6)
   .to('#pb', { opacity: 1, duration: 0.5 }, 4.0)
   .to(canvas, { opacity: 1, duration: 0.6, ease: 'none' }, 4.0)
   .to(S, { scale: 1.25, camZ: 9, spinV: 0.4, duration: 1.4, ease: 'power2.inOut' }, 4.0);
 chips.forEach((c, i) => story.to(c, { k: 1, duration: 1.0, ease: 'power3.in' }, 4.3 + i * 0.05));
-story.to(S, { scale: 1.6, duration: 0.4, ease: 'power2.in' }, 5.4)
-  .to('#pb', { opacity: 0, y: -30, duration: 0.4 }, 5.8)
-  .fromTo(app, { scale: 0, rotate: -8 }, { scale: 1, rotate: 0, duration: 1.3, ease: 'expo.out' }, 5.9)
-  .to(S, { scale: 0.9, spinV: 0.05, y: 0.4, duration: 1.2 }, 5.9)
-  .to(canvas, { opacity: 0.35, duration: 1, ease: 'none' }, 6.2)
-  .to('#dots', { opacity: 1, duration: 0.3 }, T0 - 0.3);
-if (innerWidth > 900) story.to(app, { left: '62%', duration: 0.8, ease: 'power2.inOut' }, T0 - 0.5);
-KEYS.forEach((k, j) => {
-  const t0 = T0 + j * STEP, [fx0, fy0, fx1, fy1] = FOC[k];
-  if (j) story.to(`.ly[data-k=${k}]`, { opacity: 1, duration: 0.35, ease: 'none' }, t0).set(`.ly:not([data-k=${k}])`, { opacity: 0 }, t0 + 0.36);
-  story.set(focus, { left: fx0 * 100 + '%', top: fy0 * 100 + '%', width: (fx1 - fx0) * 100 + '%', height: (fy1 - fy0) * 100 + '%', opacity: 0 }, t0 + 0.01)
-    .to(cam, { x: zoom(k, 'x'), y: zoom(k, 'y'), scale: zoom(k, 's'), duration: 1.0, ease: 'power2.inOut' }, t0 + 0.15)
-    .to(focus, { opacity: 1, duration: 0.3 }, t0 + 1.0)
-    .to(stepEls[j], { opacity: 1, duration: 0.35 }, t0 + 0.2);
-  if (k === 'player') story.fromTo('.skipx', { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3 }, t0 + 0.9).to('.skipx', { opacity: 0, duration: 0.2 }, t0 + STEP - 0.15);
-  if (j < KEYS.length - 1) story.to(focus, { opacity: 0, duration: 0.2 }, t0 + STEP - 0.3).to(stepEls[j], { opacity: 0, duration: 0.3, ease: 'power2.in' }, t0 + STEP - 0.3);
+story.to(S, { scale: 2.6, camZ: 6, duration: 1.2, ease: 'power3.in' }, 5.4)
+  .to('#pb', { opacity: 0, scale: 1.2, duration: 0.6, ease: 'power2.in' }, 6.0)
+  .to(canvas, { opacity: 0, duration: 0.5, ease: 'none' }, 6.4)
+  .to({}, { duration: 0.3 }, 6.9);
+
+// ---------- Moments: a cursor drives the app ----------
+const CUR = '<svg viewBox="0 0 24 24"><path d="M4 2l15 11-6.5 1.2L16.8 21l-3 1.4-3.6-6.6L5 20z" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/></svg>';
+const mkCursor = (stage, name, color) => { const c = document.createElement('div'); c.className = 'cx'; c.style.setProperty('--cc', color); c.innerHTML = CUR + `<span>${name}</span>`; stage.appendChild(c); return c; };
+const mkRipple = (stage) => { const r = document.createElement('div'); r.className = 'rpl'; stage.appendChild(r); return r; };
+const rel = (stage, el, fx = 0.5, fy = 0.5) => { const a = stage.getBoundingClientRect(), b = el.getBoundingClientRect(); return { x: b.left - a.left + b.width * fx, y: b.top - a.top + b.height * fy }; };
+const goTo = (tl, c, stage, el, t, d = 0.9, fx, fy) => tl.to(c, { x: () => rel(stage, el, fx, fy).x, y: () => rel(stage, el, fx, fy).y, duration: d, ease: 'power3.inOut' }, t);
+const tap = (tl, c, r, stage, el, t) => tl.to(c, { scale: 0.8, duration: 0.12 }, t).to(c, { scale: 1, duration: 0.2 }, t + 0.12)
+  .fromTo(r, { left: () => rel(stage, el).x, top: () => rel(stage, el).y, scale: 0.3, opacity: 1 }, { scale: 3.5, opacity: 0, duration: 0.6, ease: 'power2.out', immediateRender: false }, t);
+const moment = (id, build, dur = 10) => {
+  const sec = $(id), stage = $('.mst', sec), vids = $$('video', sec);
+  const tl = gsap.timeline({ defaults: { ease: 'power2.out' }, scrollTrigger: { trigger: sec, start: 'top top', end: 'bottom bottom', scrub: reduce ? true : 0.8, invalidateOnRefresh: true,
+    onToggle: (s) => vids.forEach((v) => { if (s.isActive && !v.dataset.hold) { v.preload = 'auto'; v.play().catch(() => {}); } else v.pause(); }) } });
+  ScrollTrigger.create({ trigger: sec, start: 'top bottom', end: 'bottom top', onEnter: () => vids.forEach((v) => { v.preload = 'auto'; }) });
+  build(tl, stage, sec); tl.to({}, { duration: Math.max(0, dur - tl.duration()) });
+  return tl;
+};
+const states = []; // threshold switches driven by timeline time
+const when = (tl, t, on, off) => { states.push({ tl, t, on, off, s: null }); };
+gsap.ticker.add(() => states.forEach((w) => { const now = w.tl.time() >= w.t; if (now !== w.s) { w.s = now; (now ? w.on : w.off)?.(); } }));
+
+// 01 Home: browse Continue watching, the spotlight follows your pick.
+moment('#m-home', (tl, st) => {
+  const c = mkCursor(st, 'You', '#ffb547'), r = mkRipple(st), cards = $$('.cw', st), v = $('#m1v');
+  const pick = (el) => { cards.forEach((x) => x.classList.toggle('sel', x === el)); const src = el ? `vid/${el.dataset.v}.mp4` : 'vid/sintel.mp4';
+    $('#m1t').textContent = el ? el.dataset.t : 'Sintel'; $('#m1m').textContent = el ? el.dataset.m : '2010 · 15m · Fantasy, Animation';
+    if (!v.src.endsWith(src)) { v.src = src; v.poster = src.replace('.mp4', '.jpg'); v.play().catch(() => {}); }
+    gsap.fromTo(['#m1t', '#m1m'], { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.05, ease: 'expo.out' }); };
+  tl.fromTo('.m1 .mcap', { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.8 }, 0)
+    .fromTo(cards, { y: 120, opacity: 0, rotateX: -30 }, { y: 0, opacity: 1, rotateX: 0, stagger: 0.12, duration: 0.8, ease: 'expo.out' }, 0.2)
+    .set(c, { x: () => st.offsetWidth * 0.9, y: () => st.offsetHeight * 1.05 }, 0).to(c, { opacity: 1, duration: 0.2 }, 0.9);
+  cards.forEach((el, i) => { const t = 1.2 + i * 2;
+    goTo(tl, c, st, el, t, 0.8); tl.to(el, { y: -14, scale: 1.06, duration: 0.4 }, t + 0.5); tap(tl, c, r, st, el, t + 1.2); tl.to(el, { y: 0, scale: 1, duration: 0.4 }, t + 1.7);
+    when(tl, t + 1.2, () => pick(el), () => pick(i ? cards[i - 1] : null)); });
+  tl.to(c, { opacity: 0, duration: 0.3 }, 9.4);
 });
-story.to({}, { duration: 0.9 }, T0 + KEYS.length * STEP);
+
+// 02 Resume: the clock runs to where you stopped, then you press play.
+moment('#m-resume', (tl, st) => {
+  const c = mkCursor(st, 'You', '#ffb547'), r = mkRipple(st), btn = $('#m2b'), clock = { s: 0 };
+  tl.fromTo('.m2-in > *', { y: 50, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.15, duration: 0.8 }, 0)
+    .to(clock, { s: 298, duration: 5, ease: 'power1.inOut', onUpdate: () => { const s = Math.round(clock.s); $('#m2c').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; } }, 0.8)
+    .fromTo('#m2f', { width: '0%' }, { width: '33.6%', duration: 5, ease: 'power1.inOut' }, 0.8).fromTo('#m2k', { left: '0%' }, { left: '33.6%', duration: 5, ease: 'power1.inOut' }, 0.8)
+    .set(c, { x: () => st.offsetWidth * 0.15, y: () => st.offsetHeight * 1.05 }, 0).to(c, { opacity: 1, duration: 0.2 }, 5.6);
+  goTo(tl, c, st, btn, 5.8, 1.1); tl.to(btn, { scale: 1.06, duration: 0.3 }, 6.7); tap(tl, c, r, st, btn, 7.2);
+  tl.to(btn, { scale: 0.94, duration: 0.12 }, 7.2).to(btn, { scale: 1, duration: 0.3 }, 7.32)
+    .to('.m2-in', { scale: 1.6, opacity: 0, duration: 1.4, ease: 'power3.in' }, 8.2).to(c, { opacity: 0, duration: 0.3 }, 8.2)
+    .to('.m2-bg', { filter: 'blur(0px) brightness(1) saturate(1)', scale: 1, duration: 1.4, ease: 'power3.in' }, 8.2);
+});
+
+// 03 Player: the intro rolls, you skip it.
+moment('#m-skip', (tl, st) => {
+  const c = mkCursor(st, 'You', '#ffb547'), r = mkRipple(st), skip = $('#m3k'), sp = { p: 0 };
+  tl.fromTo('#m3s', { scale: 0.7, borderRadius: 30 }, { scale: 1, borderRadius: 0, duration: 1.2, ease: 'expo.out' }, 0)
+    .to('.m3cap', { opacity: 1, duration: 0.6 }, 0.6)
+    .fromTo(skip, { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.5, ease: 'back.out(2)' }, 1.8)
+    .to(sp, { p: 100, duration: 4, ease: 'none', onUpdate: () => skip.style.setProperty('--sp', sp.p + '%') }, 1.8)
+    .set(c, { x: () => st.offsetWidth * 0.5, y: () => st.offsetHeight * 1.05 }, 0).to(c, { opacity: 1, duration: 0.2 }, 3);
+  goTo(tl, c, st, skip, 3.2, 1.4); tap(tl, c, r, st, skip, 5);
+  tl.to(skip, { opacity: 0, scale: 0.9, duration: 0.3 }, 5.1).to('#m3d', { width: '9%', duration: 0.6, ease: 'expo.out' }, 5.1).to('#m3n', { left: '9%', duration: 0.6, ease: 'expo.out' }, 5.1)
+    .to(c, { opacity: 0, duration: 0.4 }, 6.5).to('.m3cap', { opacity: 0, duration: 0.5 }, 8.6);
+  when(tl, 5.1, () => { $('#m3a').style.opacity = 0; $('#m3b').style.opacity = 1; $('#m3b').play().catch(() => {}); $('#m3t').textContent = '1:20 / 14:48'; },
+    () => { $('#m3a').style.opacity = 1; $('#m3b').style.opacity = 0; $('#m3t').textContent = '0:12 / 14:48'; });
+}, 10);
+$('#m3b').dataset.hold = '1';
+
+// 04 Search: type three letters, two servers answer.
+moment('#m-search', (tl, st) => {
+  const c = mkCursor(st, 'You', '#ffb547'), r = mkRipple(st), field = $('.m4-field', st), res = $$('.rs', st), word = 'the';
+  tl.fromTo(field, { y: 60, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.8, ease: 'expo.out' }, 0)
+    .set(c, { x: () => st.offsetWidth * 0.8, y: () => st.offsetHeight * 1.05 }, 0).to(c, { opacity: 1, duration: 0.2 }, 0.6);
+  goTo(tl, c, st, field, 0.8, 1, 0.3, 0.5); tap(tl, c, r, st, field, 1.8);
+  tl.to(field, { boxShadow: '0 30px 80px -20px #000, 0 0 0 6px rgba(255,181,71,.35)', duration: 0.3 }, 1.8);
+  for (let k = 0; k <= word.length; k++) when(tl, 2.2 + k * 0.45, () => { $('#m4i').textContent = word.slice(0, k); }, () => { $('#m4i').textContent = word.slice(0, Math.max(0, k - 1)); });
+  res.forEach((el, i) => tl.fromTo(el, { opacity: 0, x: el.dataset.s === 'you' ? -260 : 260, y: 80, rotate: el.dataset.s === 'you' ? -12 : 12 }, { opacity: 1, x: 0, y: 0, rotate: 0, duration: 0.9, ease: 'expo.out' }, 3.8 + i * 0.22));
+  tl.to(c, { x: () => rel(st, res[3]).x, y: () => rel(st, res[3]).y, duration: 1, ease: 'power3.inOut' }, 6.6).to(res[3], { y: -16, scale: 1.06, duration: 0.4 }, 7.3)
+    .to(c, { opacity: 0, duration: 0.3 }, 9.2);
+});
+
+// 05 Library: one filter, everything you've seen falls away.
+moment('#m-library', (tl, st) => {
+  const c = mkCursor(st, 'You', '#ffb547'), r = mkRipple(st), chip = $('#c-new'), seen = $$('.pc.w', st), grid = $('#m5g');
+  tl.fromTo(grid, { yPercent: -40, opacity: 0 }, { yPercent: -50, opacity: 1, duration: 1.4, ease: 'expo.out' }, 0).to(grid, { yPercent: -56, duration: 8.6, ease: 'none' }, 1.4)
+    .fromTo('.m5-head > *', { y: 40, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.12, duration: 0.7 }, 0.2)
+    .set(c, { x: () => st.offsetWidth * 0.6, y: () => st.offsetHeight * 1.05 }, 0).to(c, { opacity: 1, duration: 0.2 }, 1.2);
+  goTo(tl, c, st, chip, 1.4, 1.1); tap(tl, c, r, st, chip, 2.8);
+  when(tl, 2.8, () => { $('#c-all').classList.remove('on'); chip.classList.add('on'); }, () => { chip.classList.remove('on'); $('#c-all').classList.add('on'); });
+  seen.forEach((el, i) => tl.to(el, { y: 900 + (i % 3) * 200, z: -200, rotation: (i % 2 ? 1 : -1) * (25 + (i * 7) % 30), opacity: 0, duration: 1.6, ease: 'power2.in' }, 3 + (i % 6) * 0.12));
+  tl.to(c, { opacity: 0, duration: 0.3 }, 6);
+});
+
+// 06 Servers: Alex drags their server in, both libraries land together.
+moment('#m-friends', (tl, st) => {
+  const you = mkCursor(st, 'You', '#ffb547'), alex = mkCursor(st, 'Alex', '#a88bff'), sam = mkCursor(st, 'Sam', '#7ef0c0'), card = $('#sv-alex'), mine = $('#sv-you'), merged = $$('.mc', st);
+  tl.fromTo('.m6cap > *', { y: 40, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.12, duration: 0.7 }, 0)
+    .fromTo(mine, { x: -80, opacity: 0 }, { x: 0, opacity: 1, duration: 0.8, ease: 'expo.out' }, 0.2)
+    .set(you, { x: () => rel(st, mine, 0.7, 0.2).x, y: () => rel(st, mine, 0.7, 0.2).y + 300 }, 0).to(you, { opacity: 1, y: '-=300', duration: 1 }, 0.6)
+    .fromTo(card, { x: () => innerWidth * 0.6, rotate: 8 }, { x: 0, rotate: 0, duration: 2.4, ease: 'power3.out' }, 1.4)
+    .set(alex, { x: () => rel(st, card, 0.2, 0.15).x + innerWidth * 0.6, y: () => rel(st, card, 0.2, 0.15).y }, 0)
+    .to(alex, { opacity: 1, duration: 0.2 }, 1.3).to(alex, { x: () => rel(st, card, 0.2, 0.15).x, duration: 2.4, ease: 'power3.out' }, 1.4)
+    .set(sam, { x: () => st.offsetWidth * 0.5, y: () => st.offsetHeight * 1.05 }, 0).to(sam, { opacity: 1, duration: 0.2 }, 3.8).to(sam, { y: () => st.offsetHeight * 0.62, duration: 1.2, ease: 'power3.out' }, 3.8)
+    .to('#m6r', { opacity: 1, duration: 0.4 }, 4.6)
+    .to([mine, card], { scale: 0.86, y: -20, opacity: 0.45, duration: 1.2 }, 4.6);
+  merged.forEach((el, i) => tl.fromTo(el, { opacity: 0, x: () => (el.dataset.s === 'you' ? -1 : 1) * innerWidth * 0.3, y: -innerHeight * 0.35, scale: 0.5, rotate: (el.dataset.s === 'you' ? -1 : 1) * 20 },
+    { opacity: 1, x: 0, y: 0, scale: 1, rotate: 0, duration: 1, ease: 'expo.out' }, 4.9 + i * 0.18));
+  tl.to([you, alex, sam], { x: (i) => `+=${[60, -80, 30][i]}`, y: (i) => `+=${[40, 70, -50][i]}`, duration: 1.5, ease: 'sine.inOut' }, 6.8).to([you, alex, sam], { opacity: 0, duration: 0.4 }, 9.3);
+});
 
 // ---------- Chapters ----------
-gsap.to(canvas, { opacity: 0, ease: 'none', scrollTrigger: { trigger: '#watch', start: 'top bottom', end: 'top 30%', scrub: true } });
 const fan = $$('#fan img');
 gsap.fromTo(fan, { x: 0, rotation: (i) => (i - 3) * 2, y: 40 }, { x: (i) => (i - 3) * innerWidth * (innerWidth < 900 ? 0.09 : 0.042), rotation: (i) => (i - 3) * 9, y: (i) => Math.abs(i - 3) * 22, ease: 'none',
   scrollTrigger: { trigger: '#watch', start: 'top 80%', end: 'center center', scrub: 1, invalidateOnRefresh: true } });
