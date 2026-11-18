@@ -58,9 +58,13 @@ main,footer{position:relative;z-index:1}
 .pill.hot{background:var(--ink);color:#0b0a12;border-color:transparent}.pill.hot:hover{background:var(--amber)}
 .pill i{width:7px;height:7px;border-radius:50%;background:var(--amber)}
 /* hero */
-.hero{position:relative;height:100svh;min-height:600px}
+.hero{position:relative;height:100svh;min-height:600px;overflow:hidden;isolation:isolate}
+.reel{position:absolute;inset:0;z-index:-2}.reel video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s ease}.reel video.on{opacity:1}
+.hshade{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(7,7,13,.92),rgba(7,7,13,.55) 45%,rgba(7,7,13,.35)),linear-gradient(0deg,#07070d 2%,transparent 40%),linear-gradient(180deg,rgba(7,7,13,.7),transparent 30%)}
+.hwin{position:absolute;right:var(--gut);top:50%;margin-top:calc(min(44vw,860px) * -0.36);width:min(44vw,860px);aspect-ratio:16/10;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.16);box-shadow:0 60px 120px -30px #000,0 0 0 1px rgba(0,0,0,.4);transform-style:preserve-3d;background:#07070d}
+.hwin iframe{position:absolute;left:0;top:0;width:1600px;height:1000px;border:0;transform-origin:0 0;pointer-events:none}
 .hero .in{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:calc(var(--gut) + 10px)}
-.h1{font-size:clamp(60px,9.6vw,180px);text-shadow:0 6px 60px rgba(7,7,13,.55)}
+.h1{font-size:clamp(56px,7.6vw,150px);text-shadow:0 6px 60px rgba(7,7,13,.55)}
 .h1 .w{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.07em}
 .h1 .w>span{display:inline-block;transform:translateY(108%);transition:transform 1.2s cubic-bezier(.16,1,.3,1)}
 .h1 .w:nth-child(3)>span{transition-delay:.1s}
@@ -70,6 +74,7 @@ main,footer{position:relative;z-index:1}
 .hrow .c{display:flex;gap:10px;flex-wrap:wrap}
 .corner{position:absolute;top:calc(92px + env(safe-area-inset-top,0px));color:var(--mute)}.corner.l{left:var(--gut)}.corner.r{right:var(--gut);text-align:right}
 /* story */
+.sorb{position:absolute;left:50%;top:50%;width:min(26vw,260px);margin:calc(min(26vw,260px) / -2) 0 0 calc(min(26vw,260px) / -2);z-index:2;filter:drop-shadow(0 0 80px rgba(255,140,90,.6));transform:scale(0)}
 .story{position:relative;height:620vh}
 .sst{position:sticky;top:0;height:100svh;overflow:hidden}
 .ptitle{position:absolute;inset:0;display:grid;place-content:center;text-align:center;z-index:4;pointer-events:none}
@@ -94,108 +99,24 @@ main,footer{position:relative;z-index:1}
 .step p{color:var(--mute);font-size:16.5px}
 .dots{position:absolute;left:var(--gut);bottom:calc(30px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;z-index:4;opacity:0}
 .dots i{width:28px;height:3px;border-radius:2px;background:var(--line)}.dots i.on{background:var(--amber)}
-/* moments */
-.mo{position:relative;height:300vh;background:var(--bg)}
-.mst{position:sticky;top:0;height:100svh;overflow:hidden}
-.mcap{position:absolute;z-index:6}
-.mcap .mono,.m2-in>.mono,.m4k,.m5-head .mono{color:var(--amber)}
-.mcap h2,.m2-in h2,.m5-head h2{font-size:clamp(44px,6.4vw,118px);margin-top:16px}
-.mcap h2 em,.m2-in h2 em,.m5-head h2 em{font-style:normal;color:transparent;background:var(--g3);-webkit-background-clip:text;background-clip:text}
-.mcap p{color:#cfc9da;font-size:17px;max-width:420px;margin-top:20px}
-.kk{color:#d8d2e6;letter-spacing:.14em}
+/* moments: the real app, full screen */
+.mo{position:relative;height:320vh;background:#07070d}
+.mst{position:sticky;top:0;height:100svh;overflow:hidden;perspective:1800px}
+.scr{position:absolute;left:50%;top:calc(50% + 36px);width:1600px;height:1000px;border:0;margin:-500px 0 0 -800px;transform-origin:50% 50%;pointer-events:none;background:#07070d;will-change:transform}
+.mst::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 50%,transparent 55%,rgba(4,4,9,.55));z-index:2}
+.cap{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;justify-content:center;padding:0 var(--gut);background:linear-gradient(90deg,rgba(6,6,12,.92) 0%,rgba(6,6,12,.7) 45%,rgba(6,6,12,0) 85%);pointer-events:none}
+.cap .mono{color:var(--amber)}
+.cap h2{font-size:clamp(52px,7.4vw,138px);margin-top:18px;max-width:11ch}
+.cap h2 em{font-style:normal;color:transparent;background:var(--g3);-webkit-background-clip:text;background-clip:text}
+.cap p{color:#d6d0e4;font-size:clamp(16px,1.4vw,21px);max-width:440px;margin-top:22px}
+.tag{position:absolute;left:var(--gut);bottom:calc(26px + env(safe-area-inset-bottom,0px));z-index:7;padding:9px 14px;border-radius:99px;background:rgba(10,8,18,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);color:#e9e4f2;opacity:0}
+.tag b{color:var(--amber);font-weight:500;margin-right:10px}
 /* cursors */
-.cx{position:absolute;left:0;top:0;z-index:20;pointer-events:none;opacity:0;will-change:transform}
-.cx svg{width:30px;height:30px;display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
-.cx span{position:absolute;left:22px;top:24px;padding:5px 10px;border-radius:7px 14px 14px 14px;font:600 13px/1 Inter;color:#111;background:var(--cc);white-space:nowrap;box-shadow:0 6px 18px -6px rgba(0,0,0,.6)}
-.cx path{fill:var(--cc)}
-.rpl{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;border:3px solid var(--amber);opacity:0;z-index:19;pointer-events:none}
-/* app chrome */
-.abar{position:absolute;left:0;right:0;top:0;z-index:4;display:flex;align-items:center;gap:28px;padding:calc(84px + env(safe-area-inset-top,0px)) var(--gut) 0;font:500 14px/1 Inter;color:#d6d0e4}
-.ab-brand{display:flex;align-items:center;gap:8px;font:600 18px/1 var(--d)}.orbi{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#fff4dc,#ffb547 25%,#ff6f8f 55%,#7a4dff)}
-.ab-tabs{display:flex;gap:6px}.ab-tabs b{font-weight:500;padding:9px 14px;border-radius:9px}.ab-tabs b.on{background:rgba(255,255,255,.1);color:#fff}
-.ab-search{margin-left:auto;width:min(340px,30vw);padding:11px 16px;border-radius:10px;background:rgba(10,8,18,.55);border:1px solid rgba(255,255,255,.12);color:#9d98ad}
-.ab-av{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,#ffb547,#ff6fa5);color:#111;font-weight:700}
-/* m1 */
-.m1-bg{position:absolute;inset:0}.m1-bg video{width:100%;height:100%;object-fit:cover;transform:scale(1.08)}
-.m1-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,7,13,.9),rgba(7,7,13,.15) 60%),linear-gradient(0deg,rgba(7,7,13,.98) 8%,transparent 55%),linear-gradient(180deg,rgba(7,7,13,.7),transparent 25%)}
-.m1-hero{position:absolute;left:var(--gut);top:46%;z-index:3;max-width:50%}
-.m1-hero h3{font-size:clamp(40px,4.4vw,80px);margin:12px 0 10px}
-.m1-hero p{color:#cfc9da}
-.m1-act{display:flex;gap:10px;margin-top:22px}
-.ab-play,.ab-ghost{padding:13px 22px;border-radius:11px;font:600 15px/1 Inter}.ab-play{background:linear-gradient(100deg,#ffd27a,#ffb547 40%,#ff8a7a);color:#1a0f08}.ab-ghost{background:rgba(255,255,255,.12)}
-.m1-row{position:absolute;left:var(--gut);right:var(--gut);bottom:calc(36px + env(safe-area-inset-bottom,0px));z-index:3}
-.m1-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:14px}
-.cw{position:relative;border-radius:12px;overflow:hidden;background:#000;transform-origin:50% 100%;will-change:transform}
-.cw img{width:100%;aspect-ratio:16/9;object-fit:cover}
-.cw b{position:absolute;left:12px;bottom:26px;font:600 15px/1 Inter;text-shadow:0 2px 8px #000}.cw small{position:absolute;left:12px;bottom:10px;font-size:12px;color:#ddd;text-shadow:0 2px 6px #000}
-.cw i{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.2)}.cw i::after{content:'';position:absolute;inset:0 auto 0 0;width:var(--p);background:var(--amber)}
-.cw.sel{outline:3px solid var(--amber);outline-offset:-3px}
-.m1 .mcap{left:var(--gut);top:calc(150px + env(safe-area-inset-top,0px))}.m1 .mcap h2{font-size:clamp(36px,4.6vw,84px)}
-/* m2 */
-.m2-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(28px) brightness(.35) saturate(1.3);transform:scale(1.2)}
-.m2-in{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;z-index:2}
-.m2-time{display:flex;align-items:baseline;gap:16px;margin-top:5vh;font-variant-numeric:tabular-nums}
-.m2-time b{font:600 clamp(80px,13vw,230px)/.9 var(--d);letter-spacing:-.05em}.m2-time span{font:500 clamp(20px,2vw,32px)/1 var(--m);color:var(--mute)}
-.m2-bar{position:relative;width:min(1100px,88vw);height:8px;border-radius:8px;background:rgba(255,255,255,.14);margin-top:4vh}
-.m2-bar i{position:absolute;inset:0 auto 0 0;width:0;border-radius:8px;background:var(--g3)}
-.m2-bar s{position:absolute;top:50%;left:0;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#fff;box-shadow:0 0 30px rgba(255,181,71,.9)}
-.m2-btn{display:inline-flex;align-items:center;gap:14px;margin-top:6vh;padding:20px 34px;border-radius:16px;font:600 22px/1 Inter;color:#1a0f08;background:linear-gradient(100deg,#ffd27a,#ffb547 40%,#ff8a7a);box-shadow:0 20px 60px -10px rgba(255,150,80,.7)}
-/* m3 */
-.m3{background:#000}
-.m3-screen{position:absolute;left:50%;top:50%;width:min(100vw,177.8svh);aspect-ratio:16/9;translate:-50% -50%;background:#000;overflow:hidden}
-.m3-screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.m3-screen::before{content:"";position:absolute;inset:0 0 auto;height:55%;background:linear-gradient(rgba(0,0,0,.75),transparent);z-index:1}
-#m3b{opacity:0}
-.m3-top{display:none;position:absolute;left:3%;top:calc(4% + 60px);display:grid;gap:4px;z-index:2;text-shadow:0 2px 10px #000}.m3-top b{font:600 22px/1 Inter}.m3-top small{color:#ccc}
-.m3-skip{position:absolute;right:4%;bottom:21%;z-index:3;display:flex;align-items:center;gap:10px;padding:16px 26px;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.94);color:#111;font:600 20px/1 Inter;opacity:0}
-.m3-skip i{position:absolute;left:0;bottom:0;height:4px;width:var(--sp,0%);background:var(--amber)}
-.pbar{position:absolute;left:0;right:0;bottom:0;padding:0 3% 2.4%;background:linear-gradient(transparent,rgba(0,0,0,.85));z-index:2;padding-top:80px}
-.pseek{position:relative;height:5px;border-radius:5px;background:rgba(255,255,255,.22)}
-.pseek i{position:absolute;inset:0 auto 0 0;width:1.4%;background:linear-gradient(90deg,#ffb547,#ff6fa5);border-radius:5px}
-.pseek s{position:absolute;top:50%;left:1.4%;width:15px;height:15px;margin:-7.5px 0 0 -7.5px;border-radius:50%;background:#fff}
-.pseek u{position:absolute;top:-2px;width:2px;height:9px;background:rgba(255,255,255,.5)}
-.prow{display:flex;align-items:center;gap:22px;margin-top:16px;font:500 17px/1 Inter;color:#eee}.prow .pp{font-size:15px}.prow em{font-style:normal;font-variant-numeric:tabular-nums;color:#ddd;font-size:15px}.prow .sp{flex:1}
-.m3cap{left:var(--gut);top:calc(100px + env(safe-area-inset-top,0px));text-shadow:0 4px 40px #000;opacity:0}
-/* m4 */
-.m4{background:radial-gradient(70% 60% at 50% 40%,#1a1230,var(--bg))}
-.m4k{position:absolute;left:50%;top:calc(110px + env(safe-area-inset-top,0px));translate:-50% 0}
-.m4-field{position:absolute;left:50%;top:22%;translate:-50% 0;width:min(1000px,88vw);display:flex;align-items:center;gap:22px;padding:22px 30px;border-radius:24px;background:rgba(20,16,34,.85);border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px -20px #000,0 0 0 6px rgba(255,181,71,0);z-index:3}
-.m4-q{font-size:clamp(28px,3vw,46px);color:var(--mute)}
-.m4-field b{font:600 clamp(44px,6vw,96px)/1 var(--d);letter-spacing:-.04em;min-height:1em}
-.caret{width:4px;height:clamp(44px,5.4vw,86px);background:var(--amber);animation:blink 1s steps(2) infinite}@keyframes blink{50%{opacity:0}}
-.m4-res{position:absolute;left:50%;top:44%;translate:-50% 0;width:min(1200px,92vw);display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px}
-.rs{position:relative;opacity:0}
-.rs img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:12px;box-shadow:0 20px 40px -14px #000}
-.rs b{display:block;font:600 14px/1.25 Inter;margin-top:10px}.rs small{font-size:12px;color:var(--mute)}
-.rs em{position:absolute;top:8px;left:8px;font:600 10.5px/1 var(--m);letter-spacing:.06em;text-transform:uppercase;font-style:normal;padding:6px 8px;border-radius:6px;color:#111;background:var(--tag)}
-.m4-leg{position:absolute;left:50%;bottom:6vh;translate:-50% 0;display:flex;gap:26px;color:var(--mute)}.m4-leg span{display:flex;align-items:center;gap:8px}.m4-leg i{width:10px;height:10px;border-radius:3px}
-/* m5 */
-.m5-head{position:absolute;left:0;right:0;top:calc(90px + env(safe-area-inset-top,0px));z-index:5}
-.chipsx{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap}.chipsx b{padding:12px 18px;border-radius:99px;font:600 15px/1 Inter;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);transition:background .25s,color .25s}.chipsx b.on{background:var(--ink);color:#111}
-.m5-wall{position:absolute;inset:0;perspective:1400px;z-index:1}
-.m5-grid{position:absolute;left:50%;top:58%;width:min(1500px,130vw);translate:-50% -50%;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:16px;transform:rotateX(38deg) rotateZ(-10deg);transform-style:preserve-3d}
-.pc{position:relative;will-change:transform}
-.pc img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:10px;box-shadow:0 20px 40px -14px #000}
-.pc.w::after{content:'✓';position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:rgba(110,231,170,.95);color:#06140d;font:700 13px/1 Inter}
-/* m6 */
-.m6{background:radial-gradient(60% 60% at 50% 60%,#140f24,var(--bg))}
-.m6cap{left:var(--gut);top:calc(96px + env(safe-area-inset-top,0px))}
-.srvx{position:absolute;top:40%;width:min(420px,40vw);padding:18px;border-radius:20px;background:rgba(20,16,34,.9);border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 70px -20px #000;z-index:3}
-.srvx header{display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center;margin-bottom:14px}.srvx header i{grid-row:span 2;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font:700 17px/1 var(--d);font-style:normal;color:#111}
-.srvx header b{font:600 17px/1.2 Inter}.srvx header small{color:var(--mute);font-size:12.5px}
-.srvx.you{left:var(--gut)}.srvx.you header i{background:#ffb547}
-.srvx.alex{right:var(--gut)}.srvx.alex header i{background:#a88bff}
-.srvp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.srvp img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:7px}
-.m6-row{position:absolute;left:var(--gut);right:var(--gut);bottom:8vh;z-index:4;opacity:0}
-.m6-cards{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:12px;margin-top:14px}
-.mc{position:relative}.mc img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:10px;box-shadow:0 18px 36px -14px #000}
-.mc em{position:absolute;left:6px;bottom:6px;font:600 10px/1 var(--m);letter-spacing:.06em;text-transform:uppercase;font-style:normal;padding:5px 7px;border-radius:5px;color:#111;background:var(--tag)}
-@media (max-width:900px){
-  .mo{height:240vh}.abar .ab-tabs,.abar .ab-search{display:none}.m1-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.m1-hero{top:24%}.m1 .mcap{top:calc(120px + env(safe-area-inset-top,0px))}.m1-hero{top:30%;max-width:none}
-  .m4-res{grid-template-columns:repeat(4,minmax(0,1fr))}.m4-res .rs:nth-child(n+9){display:none}
-  .srvx{width:44vw;top:40%;padding:12px}.srvp{grid-template-columns:repeat(2,minmax(0,1fr))}.m6-cards{grid-template-columns:repeat(4,minmax(0,1fr))}.m6-cards .mc:nth-child(n+5){display:none}
-  .m5-grid{grid-template-columns:repeat(6,minmax(0,1fr));width:150vw}
-}
+.cx{position:absolute;left:0;top:0;z-index:9;pointer-events:none;opacity:0;will-change:transform}
+.cx svg{display:block;width:26px;height:26px;overflow:visible;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45)) drop-shadow(0 8px 16px rgba(0,0,0,.35))}
+.cx .lb{position:absolute;left:20px;top:22px;padding:4px 9px 5px;border-radius:999px;font:600 12px/1.2 Inter,sans-serif;letter-spacing:.01em;color:#fff;background:var(--cc);white-space:nowrap;box-shadow:0 4px 14px -4px rgba(0,0,0,.6)}
+.cx .rp{position:absolute;left:-16px;top:-16px;width:32px;height:32px;border-radius:50%;border:2px solid var(--cc);opacity:0}
+@media (max-width:900px){.mo{height:260vh}.cap{background:linear-gradient(0deg,rgba(6,6,12,.95) 20%,rgba(6,6,12,.4) 60%,transparent);justify-content:flex-end;padding-bottom:16vh}.cap h2{font-size:13vw}}
 
 /* chapters */
 .ch{position:relative;min-height:115vh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:4vw;padding-block:18vh;overflow:hidden;background:var(--bg)}
@@ -212,12 +133,12 @@ main,footer{position:relative;z-index:1}
 .c-req{--acc:#b9a2ff;--bgc:radial-gradient(80% 70% at 85% 25%,rgba(130,90,255,.55),transparent 60%),radial-gradient(60% 60% at 10% 90%,rgba(255,90,180,.3),transparent 60%)}
 .fan{position:relative;height:min(62vh,600px)}
 .fan img{position:absolute;left:50%;top:50%;width:min(15vw,230px);aspect-ratio:2/3;object-fit:cover;border-radius:10px;box-shadow:0 30px 60px -16px #000;translate:-50% -50%;will-change:transform}
-.book{position:relative;height:min(60vh,560px);display:grid;place-items:center;perspective:1600px}
-.spread{display:flex;width:min(40vw,620px);aspect-ratio:1.42;transform:rotateX(18deg) rotateZ(-4deg);transform-style:preserve-3d}
-.pg{flex:1;background:#f4ecdc;border-radius:4px 2px 2px 4px;padding:7% 8%;display:grid;grid-template-rows:repeat(3,1fr);gap:6%;box-shadow:inset -18px 0 30px -18px rgba(0,0,0,.35),0 40px 70px -20px #000}
-.pg+.pg{border-radius:2px 4px 4px 2px;box-shadow:inset 18px 0 30px -18px rgba(0,0,0,.35),0 40px 70px -20px #000}
-.pg i{border:2px solid #1b1a22;border-radius:3px;background:linear-gradient(135deg,#d8cfbd,#efe7d6)}
-.pg i:nth-child(2){background:linear-gradient(160deg,#c9bfaa,#ece3d0 60%)}
+.rd{position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:22px;perspective:1600px;max-width:600px;width:100%;justify-self:center;min-width:0}.shelfx{overflow:visible}
+.reader{border-radius:16px;overflow:hidden;background:#0d0b14;border:1px solid rgba(255,255,255,.12);box-shadow:0 50px 100px -30px #000;transform-origin:50% 100%}
+.rbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08)}.rbar b{display:block;font:600 15px/1.2 Inter}.rbar small{color:var(--mute);font-size:12.5px}.rbar .mono{color:var(--mute);font-size:11px}
+.rspread{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px;padding:18px;background:#141019}.rspread img{width:100%;aspect-ratio:1740/2376;object-fit:cover;box-shadow:0 10px 30px -10px #000}
+.rprog{height:3px;background:rgba(255,255,255,.1)}.rprog i{display:block;height:100%;width:12.5%;background:#7ef0c0}
+.shelfx{display:flex;gap:12px;will-change:transform}.shelfx img{width:clamp(70px,7vw,118px);aspect-ratio:2/3;object-fit:cover;border-radius:8px;box-shadow:0 14px 30px -10px #000;flex:none}
 .reqs{display:grid;gap:12px;max-width:520px;width:100%;justify-self:center}
 .req{display:flex;align-items:center;gap:16px;padding:14px;border-radius:14px;background:rgba(14,11,24,.75);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px)}
 .req img{width:48px;aspect-ratio:2/3;object-fit:cover;border-radius:6px}
@@ -237,7 +158,7 @@ main,footer{position:relative;z-index:1}
 .ost h2{font-size:clamp(56px,9vw,170px);max-width:12ch}
 .ost h2 span{opacity:.1;transition:none}
 /* get */
-#get{position:relative;padding-block:18vh 0}
+#get{position:relative;padding-block:18vh 0;overflow:hidden;isolation:isolate}.getbg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;opacity:.35;filter:saturate(1.2)}#get::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(#07070d,rgba(7,7,13,.6) 40%,#07070d)}
 #get .top{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:16px;color:var(--mute);margin-bottom:9vh}
 #get h2{font-size:clamp(56px,9vw,170px);text-align:center}
 #get .sub2{text-align:center;color:var(--mute);margin-top:20px;font-size:18px}
@@ -259,19 +180,17 @@ footer{background:var(--bg);overflow:hidden;padding-top:10vh}
   .h1{font-size:16.5vw}.corner.r{display:none}
   .app{width:92vw;top:40%}.steps{top:auto;bottom:calc(60px + env(safe-area-inset-bottom,0px));translate:none;width:auto;right:var(--gut)}.step .n{font-size:44px}.step h3{margin:10px 0 8px}
   .chip{font-size:13px;padding:10px 14px 10px 10px}
-  .ch{grid-template-columns:1fr;min-height:auto;padding-block:14vh}.fan img{width:34vw}.spread{width:80vw}
+  .ch{grid-template-columns:1fr;min-height:auto;padding-block:14vh}.fan img{width:34vw}
   .dlr{grid-template-columns:1fr}.dlr .act{align-items:stretch}.dlr .act .pill{justify-content:center}
 }
 @media (prefers-reduced-motion:reduce){.h1 .w>span{transform:none;transition:none}}
 </style>
-<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
 </head>
 <body>
 <div id="ld" aria-hidden="true"><div class="ld-box">
   <div class="ld-top mono"><span><i class="orb"></i>Buffering</span><span class="ld-n" id="ld-n">000%</span></div>
   <div class="ld-bar" id="ld-bar"></div>
 </div></div>
-<canvas id="gl" aria-hidden="true"></canvas>
 
 <header class="nav g">
   <a class="brand" href="#top"><img src="logo-orb.svg" alt="" width="24" height="24">zenith</a>
@@ -281,10 +200,13 @@ footer{background:var(--bg);overflow:hidden;padding-top:10vh}
 
 <main id="top">
 <section class="hero g" id="hero">
+  <div class="reel" aria-hidden="true"><video class="on" src="vid/sintel.mp4" poster="vid/sintel.jpg" muted playsinline preload="auto"></video><video src="vid/desert.mp4" poster="vid/desert.jpg" muted playsinline preload="metadata"></video><video src="vid/bridge.mp4" poster="vid/bridge.jpg" muted playsinline preload="metadata"></video><video src="vid/fire.mp4" poster="vid/fire.jpg" muted playsinline preload="metadata"></video></div>
+  <div class="hshade" aria-hidden="true"></div>
   <span class="corner l mono">Free desktop app<br>Windows · Mac · Linux</span>
   <span class="corner r mono">Jellyfin · Kavita · Seerr<br>v<span class="vv">0.2.15</span></span>
+  <div class="hwin" id="hwin" aria-hidden="true"><iframe src="app/tour2.html?s=home&amp;calm" title="Zenith home" tabindex="-1"></iframe></div>
   <div class="in g">
-    <h1 class="h1"><span class="w"><span>Your library,</span></span><br><span class="w"><span class="grad">in orbit.</span></span></h1>
+    <h1 class="h1"><span class="w"><span>Your library.</span></span><br><span class="w"><span class="grad">One app.</span></span></h1>
     <div class="hrow"><p>Movies, shows, books and requests from every server you sign in to, in one app that feels like it was made for them.</p><div class="c"><a class="pill hot" href="#get"><i></i>Download free</a><a class="pill" href="#story">See why</a></div></div>
   </div>
 </section>
@@ -293,78 +215,17 @@ footer{background:var(--bg);overflow:hidden;padding-top:10vh}
   <div class="sst">
     <div class="ptitle a" id="pa"><span class="mono">Friday, 9 PM</span><h2>Too many apps between you and the movie.</h2></div>
     <div class="ptitle b" id="pb"><span class="mono">So we fixed it</span><h2>That's why <span class="grad">Zenith</span> exists.</h2></div>
+    <img class="sorb" id="sorb" src="logo-orb.svg" alt="" width="240" height="240">
     <div class="chips" id="chips" aria-hidden="true"><div class="chip q"><i>?</i>Which server was that show on?</div><div class="chip e"><i>!</i>Codec not supported</div><div class="chip q"><i>?</i>What's your friend's password again?</div><div class="chip e"><i>!</i>Session expired. Log in again.</div><div class="chip q"><i>?</i>Episode 6 or 7? Where did I stop?</div><div class="chip q"><i>?</i>Which app had the manga?</div><div class="chip e"><i>!</i>Buffering…</div><div class="chip q"><i>?</i>Did that request go through?</div><div class="chip "><i>#</i>17 tabs open</div><div class="chip q"><i>?</i>Is it on my server or yours?</div><div class="chip e"><i>!</i>Subtitle file not found</div><div class="chip q"><i>?</i>Wait, which login was this?</div></div>
   </div>
 </section>
 
-<section class="mo m1" id="m-home" aria-label="Home">
-  <div class="mst">
-    <div class="m1-bg"><video id="m1v" src="vid/sintel.mp4" poster="vid/sintel.jpg" muted loop playsinline preload="none"></video></div>
-    <div class="m1-shade"></div>
-    <div class="abar"><span class="ab-brand"><i class="orbi"></i>zenith</span><span class="ab-tabs"><b class="on">Home</b><b>Movies</b><b>Shows</b></span><span class="ab-search">Search everything</span><span class="ab-av">S</span></div>
-    <div class="m1-hero"><span class="mono kk">Spotlight</span><h3 id="m1t">Sintel</h3><p id="m1m">2010 · 15m · Fantasy, Animation</p><div class="m1-act"><span class="ab-play">▶ Play</span><span class="ab-ghost">More info</span></div></div>
-    <div class="m1-row"><span class="mono kk">Continue watching</span><div class="m1-cards">
-      <div class="cw" data-v="desert" data-t="Sintel" data-m="2010 · 15m · Fantasy"><img src="vid/desert.jpg" alt=""><b>Sintel</b><small>9 min left</small><i style="--p:38%"></i></div>
-      <div class="cw" data-v="bridge" data-t="Tears of Steel" data-m="2012 · 12m · Sci-Fi"><img src="vid/bridge.jpg" alt=""><b>Tears of Steel</b><small>11 min left</small><i style="--p:12%"></i></div>
-      <div class="cw" data-v="fire" data-t="Sintel" data-m="2010 · 15m · Fantasy"><img src="vid/fire.jpg" alt=""><b>Sintel</b><small>2 min left</small><i style="--p:86%"></i></div>
-      <div class="cw" data-v="sniper" data-t="Tears of Steel" data-m="2012 · 12m · Sci-Fi"><img src="vid/sniper.jpg" alt=""><b>Tears of Steel</b><small>5 min left</small><i style="--p:58%"></i></div>
-    </div></div>
-    <div class="mcap g"><span class="mono">01 · Home</span><h2>Opens to <em>what's next.</em></h2></div>
-  </div>
-</section>
-
-<section class="mo m2" id="m-resume" aria-label="Resume">
-  <div class="mst">
-    <video class="m2-bg" src="vid/fire.mp4" poster="vid/fire.jpg" muted loop playsinline preload="none"></video>
-    <div class="m2-in g">
-      <span class="mono">02 · Resume</span>
-      <h2>It remembers<br>the <em>exact second.</em></h2>
-      <div class="m2-time"><b id="m2c">00:00</b><span>/ 14:48</span></div>
-      <div class="m2-bar"><i id="m2f"></i><s id="m2k"></s></div>
-      <div class="m2-btn" id="m2b"><span>▶</span>Resume Sintel</div>
-    </div>
-  </div>
-</section>
-
-<section class="mo m3" id="m-skip" aria-label="Skip intro">
-  <div class="mst">
-    <div class="m3-screen" id="m3s">
-      <video id="m3a" src="vid/intro.mp4" poster="vid/intro.jpg" muted loop playsinline preload="none"></video>
-      <video id="m3b" src="vid/sintel.mp4" poster="vid/sintel.jpg" muted loop playsinline preload="none"></video>
-      <div class="m3-top"><b>Sintel</b><small>Durian Open Movie Project</small></div>
-      <div class="m3-skip" id="m3k">Skip intro <span>⏭</span><i></i></div>
-      <div class="pbar"><div class="pseek"><i id="m3d"></i><s id="m3n"></s><u style="left:6%"></u><u style="left:31%"></u><u style="left:72%"></u></div>
-        <div class="prow"><span>⏮</span><span>⏪</span><span class="pp">❚❚</span><span>⏩</span><span>⏭</span><em id="m3t">0:12 / 14:48</em><span class="sp"></span><span>CC</span><span>⚙</span><span>▣</span><span>⛶</span></div></div>
-    </div>
-    <div class="mcap g m3cap"><span class="mono">03 · Player</span><h2>Skip the <em>intro.</em></h2><p>The original file when your PC can play it, a conversion when it can't. Intro and credits markers come straight from your server.</p></div>
-  </div>
-</section>
-
-<section class="mo m4" id="m-search" aria-label="Search">
-  <div class="mst">
-    <span class="mono m4k">04 · Search</span>
-    <div class="m4-field"><span class="m4-q">⌕</span><b id="m4i"></b><i class="caret"></i></div>
-    <div class="m4-res" id="m4r"><div class="rs" data-s="you" style="--tag:#ffb547"><img src="pop/p01.jpg" alt="" loading="lazy"><em>Yours</em><b>The Odyssey</b><small>Movie</small></div><div class="rs" data-s="alex" style="--tag:#a88bff"><img src="pop/p02.jpg" alt="" loading="lazy"><em>Alex</em><b>The Lord of the Rings: The Rings of Power</b><small>Show</small></div><div class="rs" data-s="you" style="--tag:#ffb547"><img src="pop/p04.jpg" alt="" loading="lazy"><em>Yours</em><b>The Hunger Games: Sunrise on the Reaping</b><small>Movie</small></div><div class="rs" data-s="alex" style="--tag:#a88bff"><img src="pop/p09.jpg" alt="" loading="lazy"><em>Alex</em><b>The Chosen</b><small>Show</small></div><div class="rs" data-s="you" style="--tag:#ffb547"><img src="pop/p15.jpg" alt="" loading="lazy"><em>Yours</em><b>The Simpsons</b><small>Show</small></div><div class="rs" data-s="alex" style="--tag:#a88bff"><img src="pop/p17.jpg" alt="" loading="lazy"><em>Alex</em><b>The Dark Knight</b><small>Movie</small></div><div class="rs" data-s="you" style="--tag:#ffb547"><img src="pop/p19.jpg" alt="" loading="lazy"><em>Yours</em><b>The Office</b><small>Show</small></div></div>
-    <div class="m4-leg mono"><span><i style="background:#ffb547"></i>Your server</span><span><i style="background:#a88bff"></i>Alex's server</span></div>
-  </div>
-</section>
-
-<section class="mo m5" id="m-library" aria-label="Library">
-  <div class="mst">
-    <div class="m5-head g"><span class="mono">05 · Library</span><h2>Filter, <em>don't scroll.</em></h2>
-      <div class="chipsx"><b class="on" id="c-all">All</b><b id="c-new">Not watched</b><b>In progress</b><b>Favourites</b><b>Shuffle</b></div></div>
-    <div class="m5-wall"><div class="m5-grid" id="m5g"><div class="pc w"><img src="pop/p03.jpg" alt="" loading="lazy"></div><div class="pc"><img src="pop/p08.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p12.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p01.jpg" alt="" loading="lazy"></div><div class="pc"><img src="pop/p22.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p15.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p27.jpg" alt="" loading="lazy"></div><div class="pc"><img src="pop/p06.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p10.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p19.jpg" alt="" loading="lazy"></div><div class="pc"><img src="pop/p25.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p13.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p04.jpg" alt="" loading="lazy"></div><div class="pc"><img src="pop/p17.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p20.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p02.jpg" alt="" loading="lazy"></div><div class="pc"><img src="pop/p24.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p09.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p14.jpg" alt="" loading="lazy"></div><div class="pc"><img src="pop/p28.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p05.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p11.jpg" alt="" loading="lazy"></div><div class="pc"><img src="pop/p18.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p26.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p07.jpg" alt="" loading="lazy"></div><div class="pc"><img src="pop/p16.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p21.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p23.jpg" alt="" loading="lazy"></div><div class="pc"><img src="pop/p03.jpg" alt="" loading="lazy"></div><div class="pc w"><img src="pop/p10.jpg" alt="" loading="lazy"></div></div></div>
-  </div>
-</section>
-
-<section class="mo m6" id="m-friends" aria-label="Friends">
-  <div class="mst">
-    <div class="mcap g m6cap"><span class="mono">06 · Servers</span><h2>Bring your <em>friends.</em></h2><p>Add a friend's server and their library slots in next to yours, marked with where it's from.</p></div>
-    <div class="srvx you" id="sv-you"><header><i>S</i><b>Your server</b><small>Jellyfin · Kavita · Seerr</small></header><div class="srvp"><img src="pop/p10.jpg" alt="" loading="lazy"><img src="pop/p17.jpg" alt="" loading="lazy"><img src="pop/p22.jpg" alt="" loading="lazy"><img src="pop/p01.jpg" alt="" loading="lazy"></div></div>
-    <div class="srvx alex" id="sv-alex"><header><i>A</i><b>Alex's server</b><small>Jellyfin</small></header><div class="srvp"><img src="pop/p15.jpg" alt="" loading="lazy"><img src="pop/p19.jpg" alt="" loading="lazy"><img src="pop/p02.jpg" alt="" loading="lazy"><img src="pop/p07.jpg" alt="" loading="lazy"></div></div>
-    <div class="m6-row" id="m6r"><span class="mono">Home · Recently added</span><div class="m6-cards" id="m6c"><div class="mc" data-s="you" style="--tag:#ffb547"><img src="pop/p10.jpg" alt="" loading="lazy"><em>Yours</em></div><div class="mc" data-s="alex" style="--tag:#a88bff"><img src="pop/p15.jpg" alt="" loading="lazy"><em>Alex</em></div><div class="mc" data-s="you" style="--tag:#ffb547"><img src="pop/p17.jpg" alt="" loading="lazy"><em>Yours</em></div><div class="mc" data-s="alex" style="--tag:#a88bff"><img src="pop/p19.jpg" alt="" loading="lazy"><em>Alex</em></div><div class="mc" data-s="you" style="--tag:#ffb547"><img src="pop/p22.jpg" alt="" loading="lazy"><em>Yours</em></div><div class="mc" data-s="alex" style="--tag:#a88bff"><img src="pop/p02.jpg" alt="" loading="lazy"><em>Alex</em></div><div class="mc" data-s="you" style="--tag:#ffb547"><img src="pop/p01.jpg" alt="" loading="lazy"><em>Yours</em></div><div class="mc" data-s="alex" style="--tag:#a88bff"><img src="pop/p07.jpg" alt="" loading="lazy"><em>Alex</em></div></div></div>
-  </div>
-</section>
+<section class="mo" id="m-home" data-scene="home" aria-label="Home"><div class="mst"><div class="cap"><span class="mono">01 · Home</span><h2>Opens to <em>what's next.</em></h2><p>Your greeting, what you were halfway through and what just landed on your server.</p></div></div></section>
+<section class="mo" id="m-resume" data-scene="show" aria-label="Resume"><div class="mst"><div class="cap"><span class="mono">02 · Shows</span><h2>Right where <em>you stopped.</em></h2><p>It remembers the episode and the second. One press.</p></div></div></section>
+<section class="mo" id="m-skip" data-scene="player" aria-label="Player"><div class="mst"><div class="cap"><span class="mono">03 · Player</span><h2>Skip the <em>intro.</em></h2><p>The original file when your PC can play it. Intro and credit markers straight from your server.</p></div></div></section>
+<section class="mo" id="m-search" data-scene="search" aria-label="Search"><div class="mst"><div class="cap"><span class="mono">04 · Search</span><h2>Type. <em>Found.</em></h2><p>Results from every server you've connected, as you type.</p></div></div></section>
+<section class="mo" id="m-library" data-scene="movies" aria-label="Library"><div class="mst"><div class="cap"><span class="mono">05 · Library</span><h2>Filter, <em>don't scroll.</em></h2><p>Not watched, in progress, favourites, genres and shuffle.</p></div></div></section>
+<section class="mo" id="m-friends" data-scene="settings" aria-label="Servers"><div class="mst"><div class="cap"><span class="mono">06 · Servers</span><h2>Bring your <em>friends.</em></h2><p>Add a friend's server and their library shows up next to yours.</p></div></div></section>
 
 <section class="ch c-watch g" id="watch">
   <div><div class="k mono"><span>01</span><span>Jellyfin</span></div><h2>Watch.</h2><p class="lead">Movies, shows and collections, with everything you'd expect from a good player and nothing you have to set up.</p>
@@ -372,14 +233,18 @@ footer{background:var(--bg);overflow:hidden;padding-top:10vh}
   <div class="fan" id="fan" aria-hidden="true"><img src="pop/f0.jpg" alt="" loading="lazy"><img src="pop/f1.jpg" alt="" loading="lazy"><img src="pop/f2.jpg" alt="" loading="lazy"><img src="pop/f3.jpg" alt="" loading="lazy"><img src="pop/f4.jpg" alt="" loading="lazy"><img src="pop/f5.jpg" alt="" loading="lazy"><img src="pop/f6.jpg" alt="" loading="lazy"></div>
 </section>
 <section class="ch c-read g" id="read">
-  <div class="book" aria-hidden="true"><div class="spread" id="spread"><div class="pg"><i></i><i></i><i></i></div><div class="pg"><i></i><i></i><i></i></div></div></div>
+  <div class="rd" aria-hidden="true">
+    <div class="reader" id="reader"><div class="rbar"><span><b>Little Nemo in Slumberland</b><small>Winsor McCay · 1905</small></span><span class="mono">Two-page · Page 3 / 24</span></div>
+      <div class="rspread"><img src="books/nemo1.jpg" alt=""><img src="books/nemo4.jpg" alt=""></div><div class="rprog"><i></i></div></div>
+    <div class="shelfx" id="shelfx"><img src="books/b01.jpg" alt="" loading="lazy"><img src="books/b06.jpg" alt="" loading="lazy"><img src="books/b04.jpg" alt="" loading="lazy"><img src="books/b10.jpg" alt="" loading="lazy"><img src="books/b08.jpg" alt="" loading="lazy"><img src="books/b02.jpg" alt="" loading="lazy"><img src="books/b12.jpg" alt="" loading="lazy"><img src="books/b03.jpg" alt="" loading="lazy"><img src="books/b09.jpg" alt="" loading="lazy"><img src="books/b11.jpg" alt="" loading="lazy"></div>
+  </div>
   <div><div class="k mono"><span>02</span><span>Kavita</span></div><h2>Read.</h2><p class="lead">Books, manga and comics from your Kavita library, in the same app as your movies.</p>
   <ul><li>Page and two-page<b>Yes</b></li><li>Long strip for webtoons<b>Yes</b></li><li>Paper and sepia<b>Themes</b></li><li>Picks up your page<b>Synced</b></li></ul></div>
 </section>
 <section class="ch c-req g" id="request">
   <div><div class="k mono"><span>03</span><span>Seerr · ask sites</span></div><h2>Request.</h2><p class="lead">Want something that isn't there yet? Ask for it without leaving the app, and see when it's ready.</p>
   <ul><li>Movies, shows, anime<b>Seerr</b></li><li>Books, manga, comics<b>Ask sites</b></li><li>Pending and ready<b>Tracked</b></li></ul></div>
-  <div class="reqs" id="reqs"><div class="req"><span style="width:48px;aspect-ratio:2/3;border-radius:6px;flex:none;background:linear-gradient(160deg,#ff8a5c,#1a1626)"></span><div><b>Night of the Living Dead</b><small>Movie · 1968</small></div><em class="ok">Ready</em></div><div class="req"><span style="width:48px;aspect-ratio:2/3;border-radius:6px;flex:none;background:linear-gradient(160deg,#ffb547,#1a1626)"></span><div><b>Pioneer One</b><small>Season 2</small></div><em class="wait">Pending</em></div><div class="req"><span style="width:48px;aspect-ratio:2/3;border-radius:6px;flex:none;background:linear-gradient(160deg,#b9a2ff,#1a1626)"></span><div><b>Nosferatu</b><small>Movie · 1922</small></div><em class="new">Requested</em></div><div class="req"><span style="width:48px;aspect-ratio:2/3;border-radius:6px;flex:none;background:linear-gradient(160deg,#7ef0c0,#1a1626)"></span><div><b>Metropolis</b><small>Movie · 1927</small></div><em class="ok">Ready</em></div></div>
+  <div class="reqs" id="reqs"><div class="req"><img src="pop/p10.jpg" alt="" loading="lazy"><div><b>Project Hail Mary</b><small>Movie</small></div><em class="ok">Ready</em></div><div class="req"><img src="books/b06.jpg" alt="" loading="lazy"><div><b>Chainsaw Man, Vol. 1</b><small>Manga</small></div><em class="wait">Pending</em></div><div class="req"><img src="pop/p03.jpg" alt="" loading="lazy"><div><b>Avengers: Doomsday</b><small>Movie</small></div><em class="new">Requested</em></div><div class="req"><img src="books/b04.jpg" alt="" loading="lazy"><div><b>Dune</b><small>Book</small></div><em class="ok">Ready</em></div></div>
 </section>
 
 <section class="giant" id="giant" aria-label="Your library, your servers">
@@ -391,7 +256,7 @@ footer{background:var(--bg);overflow:hidden;padding-top:10vh}
 
 <section class="outro" id="outro"><div class="ost g"><h2 id="ow">Your whole night. One app. Free.</h2></div></section>
 
-<section class="g" id="get">
+<section class="g" id="get"><video class="getbg" src="vid/desert.mp4" poster="vid/desert.jpg" muted loop playsinline preload="none" aria-hidden="true"></video>
   <div class="top mono"><span>Download</span><span id="dl-ver">Version 0.2.15</span></div>
   <h2>Bring it <span class="grad">home.</span></h2>
   <p class="sub2">Free and open source. Updates install by themselves.</p>
