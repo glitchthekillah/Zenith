@@ -43,6 +43,9 @@ const reelV = $$('.reel video'); let ri = 0;
 function reel() { reelV[0]?.play().catch(() => {}); if (!reduce) setInterval(() => { if (scrollY > innerHeight * 1.2) return; const a = reelV[ri]; ri = (ri + 1) % reelV.length; const b = reelV[ri]; b.currentTime = 0; b.play().catch(() => {}); b.classList.add('on'); a.classList.remove('on'); setTimeout(() => a.pause(), 1200); }, 4200); }
 const hwin = $('#hwin'), hfr = $('#hwin iframe');
 const fitH = () => gsap.set(hfr, { scale: hwin.offsetWidth / 1600 }); addEventListener('resize', fitH); fitH();
+const noBlur = (fr) => { try { const d = fr.contentDocument; const st = d.createElement('style'); st.textContent = '*{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}'; d.head.appendChild(st); } catch (e) {} };
+if (hfr.contentDocument?.readyState === 'complete') noBlur(hfr); hfr.addEventListener('load', () => noBlur(hfr));
+ScrollTrigger.create({ trigger: '.hero', start: 'top top', end: 'bottom top', onToggle: (s) => { hwin.style.visibility = s.isActive ? '' : 'hidden'; } });
 if (!touch && !reduce) { const rx = gsap.quickTo(hwin, 'rotateY', { duration: 1, ease: 'power3.out' }), ry = gsap.quickTo(hwin, 'rotateX', { duration: 1, ease: 'power3.out' });
   addEventListener('pointermove', (e) => { if (scrollY > innerHeight) return; rx(-14 + (e.clientX / innerWidth - 0.5) * 10); ry(6 - (e.clientY / innerHeight - 0.5) * 8); }, { passive: true }); }
 gsap.set(hwin, { rotateY: -14, rotateX: 6, transformPerspective: 1600 });
@@ -102,12 +105,13 @@ const cover = () => Math.min(innerWidth / 1920, (innerHeight - 70) / 1200) * 0.9
 function moment(id, dur, build) {
   const sec = $(id), st = $('.mst', sec), scene = sec.dataset.scene, cap = $('.cap', st);
   const f = document.createElement('iframe'); f.className = 'scr'; f.title = 'Zenith ' + scene; f.tabIndex = -1; f.setAttribute('aria-hidden', 'true');
-  f.src = `app/tour2.html?s=${scene}&calm`; st.prepend(f);
+  st.prepend(f);
+  const mount = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { f.src = `app/tour2.html?s=${scene}&calm`; mount.disconnect(); } }, { rootMargin: '150% 0px' }); mount.observe(sec);
   const vids = () => [...(f.contentDocument?.querySelectorAll('video') || [])];
   gsap.set(f, { scale: cover() }); addEventListener('resize', () => gsap.set(f, { scale: cover() }));
-  ScrollTrigger.create({ trigger: sec, start: 'top bottom', end: 'bottom top', onToggle: (s) => vids().forEach((v) => (s.isActive ? v.play().catch(() => {}) : v.pause())) });
+  ScrollTrigger.create({ trigger: sec, start: 'top bottom', end: 'bottom top', onToggle: (s) => { f.style.visibility = s.isActive ? '' : 'hidden'; vids().forEach((v) => (s.isActive ? v.play().catch(() => {}) : v.pause())); } });
   f.addEventListener('load', () => {
-    const doc = f.contentDocument; const style = doc.createElement('style'); style.textContent = CSS; doc.head.appendChild(style);
+    const doc = f.contentDocument; const style = doc.createElement('style'); style.textContent = CSS + '*{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}'; doc.head.appendChild(style);
     const S = doc.querySelector(`.scene[data-s="${scene}"]`) || doc;
     const q = (sel) => S.querySelector(sel), qa = (sel) => [...S.querySelectorAll(sel)];
     const byText = (sel, txt) => qa(sel).find((e) => e.textContent.includes(txt));
