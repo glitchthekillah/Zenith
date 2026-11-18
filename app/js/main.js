@@ -256,6 +256,40 @@ try { histMax = Number(sessionStorage.getItem('zhmax')) || 0; } catch {}
 const numbered = () => history.state && typeof history.state.zi === 'number';
 { const rs = history.replaceState.bind(history); history.replaceState = (st, t, u) => rs({ ...(st || {}), zi: histCur }, t, u); }
 if (numbered()) histCur = history.state.zi; else history.replaceState(null, '', location.href);
+// Scroll memory: every history entry remembers how far down the page was scrolled, so Back, Forward
+// and reloading land where you were. Opening a page fresh still starts at the top.
+const scrollMemory = (() => {
+  const app = document.getElementById('app'), KEY = 'zscroll';
+  let saved = {}; try { saved = JSON.parse(sessionStorage.getItem(KEY) || '{}') || {}; } catch {}
+  let busy = true, target = null, until = 0, timer = 0;
+  // The page can finish rendering before the history counter below updates, so read the entry's own number.
+  const key = () => (numbered() ? history.state.zi : histCur + 1) + '|' + location.hash;
+  const store = () => { try { sessionStorage.setItem(KEY, JSON.stringify(saved)); } catch {} };
+  const persist = () => { clearTimeout(timer); timer = setTimeout(store, 150); };
+  // Pages stream in (shelves, posters), so keep nudging toward the saved spot until it fits, the user
+  // scrolls themselves, or a few seconds pass.
+  const restore = () => {
+    if (target === null || !app) return;
+    if (performance.now() > until) { target = null; return; }
+    // Keep holding the spot for the whole window: late content can shrink the page for a moment and
+    // knock it back to the top. Any wheel, touch, click or key from the user ends it straight away.
+    if (Math.abs(app.scrollTop - target) >= 2) app.scrollTop = target;
+  };
+  on('route', () => { busy = true; target = null; });
+  on('rendered', () => { busy = false; const y = saved[key()]; if (y > 0) { target = y; until = performance.now() + 2500; restore(); } });
+  on('patched', () => requestAnimationFrame(restore));
+  // Grids and shelves can fill in without a 'patched' event, so also retry whenever the page grows.
+  if (app && 'ResizeObserver' in window) new ResizeObserver(() => restore()).observe(document.getElementById('view') || app);
+  setInterval(() => { if (target !== null) restore(); }, 120);
+  if (app) {
+    app.addEventListener('scroll', () => { if (busy || target !== null) return; saved[key()] = Math.round(app.scrollTop); persist(); }, { passive: true });
+    for (const t of ['wheel', 'touchstart', 'pointerdown', 'keydown']) app.addEventListener(t, () => { target = null; }, { passive: true });
+  }
+  addEventListener('pagehide', store);
+  // A brand new page replaces any forward history, and its old scroll spots with it.
+  return { fresh(next) { for (const k of Object.keys(saved)) if (Number(k.split('|')[0]) >= next) delete saved[k]; persist(); } };
+})();
+addEventListener('hashchange', () => { if (!numbered()) scrollMemory.fresh(histCur + 1); });
 addEventListener('hashchange', () => {
   if (numbered()) histCur = history.state.zi; // back or forward
   else { histCur += 1; histMax = histCur; history.replaceState(null, '', location.href); } // a new page
