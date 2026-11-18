@@ -33,7 +33,7 @@ const lbi = $$('i', lbar); let shown = 0; const lt0 = performance.now();
   if (shown < 1) return requestAnimationFrame(ldTick);
   setTimeout(start, 200);
 })();
-setTimeout(() => { parts = need * 2; }, 12000);
+setTimeout(() => { parts = need * 2; }, 8000);
 let started = false;
 function start() {
   if (started) return; started = true;
@@ -49,7 +49,7 @@ const hwin = $('#hwin'), hfr = $('#hwin iframe');
 const fitH = () => gsap.set(hfr, { scale: hwin.offsetWidth / 1600 }); addEventListener('resize', fitH); fitH();
 const noBlur = (fr) => { try { const d = fr.contentDocument; const st = d.createElement('style'); st.textContent = '*{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}'; d.head.appendChild(st); } catch (e) {} };
 if (hfr.contentDocument?.readyState === 'complete') noBlur(hfr); hfr.addEventListener('load', () => noBlur(hfr));
-ScrollTrigger.create({ trigger: '.hero', start: 'top top', end: 'bottom top', onToggle: (s) => { hwin.style.visibility = s.isActive ? '' : 'hidden'; } });
+ScrollTrigger.create({ trigger: '.hero', start: 'top bottom', end: 'bottom top', onToggle: (s) => { hwin.style.visibility = s.isActive ? '' : 'hidden'; } });
 if (!touch && !reduce) { const rx = gsap.quickTo(hwin, 'rotateY', { duration: 1, ease: 'power3.out' }), ry = gsap.quickTo(hwin, 'rotateX', { duration: 1, ease: 'power3.out' });
   addEventListener('pointermove', (e) => { if (scrollY > innerHeight) return; rx(-14 + (e.clientX / innerWidth - 0.5) * 10); ry(6 - (e.clientY / innerHeight - 0.5) * 8); }, { passive: true }); }
 gsap.set(hwin, { rotateY: -14, rotateX: 6, transformPerspective: 1600 });
