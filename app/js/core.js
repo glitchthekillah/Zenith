@@ -231,7 +231,7 @@ const P = {
   inbox: 'M3 13h5l2 3h4l2-3h5 M5 5h14l2 8v6H3v-6z', download: 'M12 3v12 M7 10l5 5 5-5 M4 19h16', back: 'M15 5l-7 7 7 7', next: 'M9 5l7 7-7 7',
   pip: 'M3 5h18v14H3z M12 11h7v6h-7z', expand: 'M4 9V4h5 M20 9V4h-5 M4 15v5h5 M20 15v5h-5', shrink: 'M9 4v5H4 M15 4v5h5 M9 20v-5H4 M15 20v-5h5',
   volume: 'M11 5L6 9H2v6h4l5 4z M15.5 8.5a5 5 0 0 1 0 7 M18.5 5.5a9 9 0 0 1 0 13', mute: 'M11 5L6 9H2v6h4l5 4z M22 9l-6 6 M16 9l6 6',
-  subs: 'M3 5h18v14H3z M7 13h3 M13 13h4 M7 16h6 M15 16h2', gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', skipb: 'M4 12a8 8 0 1 0 2.4-5.7 M4 3v4h4', skipf: 'M20 12a8 8 0 1 1-2.4-5.7 M20 3v4h-4',
+  subs: 'M3 5h18v14H3z M7 13h3 M13 13h4 M7 16h6 M15 16h2', gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', skipb: 'M4 12a8 8 0 1 0 2.4-5.7 M4 3v4h4', section: 'M4 5v14 M8 12h11 M15 8l4 4-4 4', skipf: 'M20 12a8 8 0 1 1-2.4-5.7 M20 3v4h-4',
   prev: 'M6 5v14 M18 5l-9 7 9 7z', nextep: 'M18 5v14 M6 5l9 7-9 7z', list: 'M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01', star: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
   eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', refresh: 'M20 8a8 8 0 1 0 1 6 M20 3v5h-5', shuffle: 'M16 3h5v5 M4 20 21 3 M21 16v5h-5 M15 15l6 6 M4 4l5 5',
   pin: 'M12 17v5 M5 17h14l-2-5V5h1V3H6v2h1v7z', minimize: 'M5 12h14', maximize: 'M5 5h14v14H5z', restore: 'M8 8h11v11H8z M5 16V5h11', logout: 'M9 4H4v16h5 M9 12h12 M17 8l4 4-4 4',

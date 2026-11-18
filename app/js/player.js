@@ -104,6 +104,7 @@ function build() {
         <button class="pl-btn hide-mini" data-p="back10" title="Back ${skipB()} seconds (Left)">${icon('skipb')}<span class="tag">${skipB()}</span></button>
         <button class="pl-btn play" data-p="toggle" title="Play / pause (Space)">${icon('play')}</button>
         <button class="pl-btn hide-mini" data-p="fwd30" title="Forward ${skipF()} seconds (Right)">${icon('skipf')}<span class="tag">${skipF()}</span></button>
+        <button class="pl-btn hide-mini" data-p="section" title="Next section (S)" hidden>${icon('section')}</button>
         <button class="pl-btn" data-p="next" title="Next episode (N)" hidden>${icon('nextep')}</button>
         <div class="pl-vol"><button class="pl-btn" data-p="mute" title="Mute (M)">${icon('volume')}</button><input type="range" min="0" max="1" step="0.02" aria-label="Volume"></div>
         <span class="pl-time">0:00 / 0:00</span>
@@ -380,6 +381,7 @@ function paintButtons() {
   $('[data-p=next]', el).hidden = !ep || !S.queue.length;
   $('[data-p=prev]', el).hidden = !ep;
   $('[data-p=episodes]', el).hidden = !ep;
+  $('[data-p=section]', el).hidden = !sections().length;
   $('[data-p=subs]', el).classList.toggle('on', S.sub != null);
   $('[data-p=pip]', el).hidden = !document.pictureInPictureEnabled;
   // Chapter marks on the seek bar
@@ -396,6 +398,25 @@ function paintButtons() {
 }
 const spin = (on) => { if (S) S.loading = on; const c = $('.pl-center', root()); if (c) c.hidden = !on; paintPlay(); };
 let flashT;
+// Section jumps: every intro, recap and credits start and end the server knows about, plus the
+// chapter starts. The button (S) goes to the next one, Shift+S back to the previous one.
+function sections() {
+  const d = duration(), out = [];
+  const name = { Intro: 'intro', Outro: 'credits', Recap: 'recap', Preview: 'preview', Commercial: 'break' };
+  for (const s of S?.segments || []) {
+    const n = name[s.type] || 'section';
+    out.push({ t: s.start, label: n[0].toUpperCase() + n.slice(1) }, { t: s.end, label: `After the ${n}` });
+  }
+  for (const c of S?.item?.Chapters || []) out.push({ t: c.StartPositionTicks / 1e7, label: /^chapter \d+$/i.test(c.Name || '') || !c.Name ? 'Next chapter' : c.Name });
+  return out.filter((x) => x.t > 1 && (!d || x.t < d - 1)).sort((a, b) => a.t - b.t)
+    .filter((x, i, all) => i === 0 || x.t - all[i - 1].t > 1.5);
+}
+function jumpSection(dir = 1) {
+  const p = pos(), list = sections();
+  const to = dir > 0 ? list.find((x) => x.t > p + 1) : [...list].reverse().find((x) => x.t < p - 3);
+  if (!to) return flash(dir > 0 ? 'No more sections' : 'Already at the first section');
+  seekTo(to.t); flash(to.label);
+}
 function flash(text) { const f = $('.pl-flash', root()); if (!f) return; f.textContent = text; f.classList.add('show'); clearTimeout(flashT); flashT = setTimeout(() => f.classList.remove('show'), 900); }
 let idleT;
 function wake() { const el = root(); el.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(() => { if (S && !S.v.paused && !S.menu) el.classList.add('idle'); }, 2600); }
@@ -545,6 +566,7 @@ async function onClick(e) {
   if (p === 'toggle') return toggle();
   if (p === 'back10') return seekBy(-skipB());
   if (p === 'fwd30') return seekBy(skipF());
+  if (p === 'section') return jumpSection(1);
   if (p === 'mute') { setAudioMuted(S.v, !audioMuted(S.v)); paintVolume(); return; }
   if (p === 'next') return nextEpisode();
   if (p === 'prev') return prevEpisode();
@@ -626,7 +648,7 @@ document.addEventListener('keydown', (e) => {
   const map = {
     '?': () => shortcuts(), ' ': toggle, k: toggle, arrowleft: () => seekBy(e.shiftKey ? -skipB() * 3 : -skipB()), arrowright: () => seekBy(e.shiftKey ? skipF() * 3 : skipF()), j: () => seekBy(-10), l: () => seekBy(10),
     arrowup: () => { S.v.volume = Math.min(1, S.v.volume + 0.05); flash(`${Math.round(S.v.volume * 100)}%`); }, arrowdown: () => { S.v.volume = Math.max(0, S.v.volume - 0.05); flash(`${Math.round(S.v.volume * 100)}%`); },
-    f: () => fullscreen(), m: () => (desktop ? mini() : (setAudioMuted(S.v, !audioMuted(S.v)))), p: pip, c: () => menu('subs'), n: nextEpisode, escape: () => (S.menu ? menu(S.menu) : document.body.classList.contains('mini') ? mini(false) : document.body.classList.contains('fullscreen') ? fullscreen(false) : close()),
+    f: () => fullscreen(), m: () => (desktop ? mini() : (setAudioMuted(S.v, !audioMuted(S.v)))), p: pip, c: () => menu('subs'), n: nextEpisode, s: () => jumpSection(e.shiftKey ? -1 : 1), escape: () => (S.menu ? menu(S.menu) : document.body.classList.contains('mini') ? mini(false) : document.body.classList.contains('fullscreen') ? fullscreen(false) : close()),
     '>': () => { const i = SPEEDS.indexOf(S.v.playbackRate); S.v.playbackRate = SPEEDS[Math.min(SPEEDS.length - 1, i + 1)]; flash(`${S.v.playbackRate}x`); }, '<': () => { const i = SPEEDS.indexOf(S.v.playbackRate); S.v.playbackRate = SPEEDS[Math.max(0, i - 1)]; flash(`${S.v.playbackRate}x`); },
   };
   if (/^[0-9]$/.test(k)) { seekTo((Number(k) / 10) * duration()); e.preventDefault(); return; }
@@ -663,7 +685,7 @@ document.addEventListener('wheel', (e) => {
 function shortcuts() {
   const el = root(); if (!el) return;
   const open = $('.pl-keys', el); if (open) return open.remove();
-  const rows = [['Space / K', 'Play or pause'], ['← / →', `Back ${skipB()}s / forward ${skipF()}s`], ['Shift + ← / →', 'Jump three times as far'], ['J / L', 'Back / forward 10s'], ['↑ / ↓', 'Volume'], ['F', 'Fullscreen'], ['M', desktop ? 'Mini player' : 'Mute'], ['P', 'Picture-in-picture'], ['C', 'Subtitles'], ['N', 'Next episode'], ['< / >', 'Slower / faster'], ['Esc', 'Close menu or leave fullscreen'], ['?', 'Show or hide this list']];
+  const rows = [['Space / K', 'Play or pause'], ['← / →', `Back ${skipB()}s / forward ${skipF()}s`], ['Shift + ← / →', 'Jump three times as far'], ['J / L', 'Back / forward 10s'], ['↑ / ↓', 'Volume'], ['F', 'Fullscreen'], ['M', desktop ? 'Mini player' : 'Mute'], ['P', 'Picture-in-picture'], ['C', 'Subtitles'], ['N', 'Next episode'], ['S / Shift + S', 'Next / previous section (intro, credits, chapters)'], ['< / >', 'Slower / faster'], ['Esc', 'Close menu or leave fullscreen'], ['?', 'Show or hide this list']];
   el.insertAdjacentHTML('beforeend', `<div data-air-video-controls class="pl-keys" role="dialog" aria-label="Keyboard shortcuts"><div class="pl-keys-card"><b>Keyboard shortcuts</b><dl>${rows.map(([k, d]) => `<dt>${k.split(' / ').map((x) => `<kbd>${esc(x)}</kbd>`).join(' ')}</dt><dd>${esc(d)}</dd>`).join('')}</dl><button class="btn" data-keys-close>Close</button></div></div>`);
 }
 document.addEventListener('click', (e) => { const k = e.target.closest('.pl-keys'); if (k && (e.target === k || e.target.closest('[data-keys-close]'))) { e.stopPropagation(); k.remove(); } }, true);
