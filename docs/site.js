@@ -238,11 +238,3 @@ gsap.timeline({ scrollTrigger: { trigger: '#giant', start: 'top top', end: 'bott
 // ---------- Outro: word by word ----------
 const ow = $('#ow'); ow.innerHTML = ow.textContent.split(' ').map((w) => `<span>${w}</span>`).join(' ');
 gsap.to('#ow span', { opacity: 1, stagger: 0.3, ease: 'none', scrollTrigger: { trigger: '#outro', start: 'top top', end: 'bottom bottom', scrub: true } });
-
-// ---------- Direct downloads from the newest release ----------
-fetch('https://api.github.com/repos/glitchthekillah/Zenith/releases/latest').then((r) => r.ok ? r.json() : null).then((rel) => {
-  if (!rel) return;
-  $$('[data-asset]').forEach((a) => { const f = rel.assets.find((x) => x.name.endsWith(a.dataset.asset)); if (f) a.href = f.browser_download_url; });
-  const v = rel.tag_name.replace(/^v/, ''); $('#dl-ver').textContent = `Version ${v}`; $$('.vv').forEach((e) => { e.textContent = v; });
-}).catch(() => {});
-addEventListener('load', () => ScrollTrigger.refresh());
