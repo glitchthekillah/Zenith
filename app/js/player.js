@@ -127,7 +127,12 @@ function build() {
   v.addEventListener('timeupdate', tick);
   v.addEventListener('progress', paintBuffer);
   v.addEventListener('waiting', () => spin(true));
-  v.addEventListener('playing', () => { spin(false); paintPlay(); });
+  v.addEventListener('playing', () => {
+    if (!S || S.v !== v) return;
+    S.hasPlayed = true;
+    S.playingEpoch = S.loadEpoch;
+    spin(false); paintPlay();
+  });
   v.addEventListener('canplay', () => spin(false));
   v.addEventListener('pause', () => { paintPlay(); report(true); discord(); });
   v.addEventListener('play', () => { paintPlay(); discord(); });
@@ -228,20 +233,28 @@ async function load(at = 0) {
       S.hls = hls;
       // Recover from a hiccup a couple of times, then say what went wrong instead of spinning forever
       const tries = { net: 0, media: 0 };
+      const isCurrent = () => S === session && session.loadEpoch === epoch && session.hls === hls;
       hls.on(window.Hls.Events.ERROR, (e, d) => {
-        if (!d.fatal) return;
-        if (d.type === 'networkError' && tries.net++ < 3) return void setTimeout(() => hls.startLoad(), 800 * tries.net);
+        if (!isCurrent() || !d.fatal) return;
+        if (d.type === 'networkError' && tries.net++ < 3) return void setTimeout(() => { if (isCurrent()) hls.startLoad(); }, 800 * tries.net);
         if (d.type === 'mediaError' && tries.media++ < 2) return void hls.recoverMediaError();
-        // Still can't decode (often HEVC or 10-bit video the system says it supports but can't play):
-        // ask the server to convert the picture to H.264 once and carry on from the same spot
-        if (d.type === 'mediaError' && !S.forceTranscode) { S.forceTranscode = true; toast('Converting this video so it can play here...'); return void load(pos()); }
+        // A stream that already played can be reopened once at the stalled position.
+        if (d.type === 'mediaError' && session.hasPlayed && !session.reopenedStream) {
+          session.reopenedStream = true;
+          return void load(pos());
+        }
+        // An HLS decoder that never got started may need a compatible codec.
+        if (d.type === 'mediaError' && !session.hasPlayed && !session.forceTranscode) {
+          session.forceTranscode = true;
+          toast('Converting this video so it can play here...');
+          return void load(pos());
+        }
         // Still failing: on Linux, skip the in-page stream handling and let the system's own player stream it
         if (d.type === 'mediaError' && desktop?.linuxStream && !S.nativeHls) { S.nativeHls = true; return void load(pos()); }
         fail(new Error(d.type === 'mediaError' ? `This device couldn't decode the stream (${d.details}).` : d.type === 'networkError' ? `The server stopped sending the stream (${d.details}${d.response?.code ? ` ${d.response.code}` : ''}).` : `The stream stopped (${d.details}).`));
       });
       // Nothing playing after a while: stop the endless spinner and explain
-      const session = S, epoch = S.loadEpoch;
-      setTimeout(() => { if (S === session && S.loadEpoch === epoch && S.v.readyState < 2 && !S.v.error) fail(new Error('The server took too long to start this stream. It may still be preparing the file; try again in a moment.')); }, 45000);
+      setTimeout(() => { if (isCurrent() && session.playingEpoch !== epoch && v.readyState < 2 && !v.error) fail(new Error('The server took too long to start this stream. It may still be preparing the file; try again in a moment.')); }, 45000);
       // Most servers send the whole episode in the playlist (it starts at 0, not at the resume point):
       // then jump to the resume point ourselves, or it starts from the beginning while the bar says otherwise
       hls.once(window.Hls.Events.LEVEL_LOADED, (e, d) => {
@@ -607,8 +620,6 @@ async function fail(e) {
   const source = S.pb?.source || S.item.MediaSources?.[0];
   // The original file wouldn't decode here: try once more through the server's repackaged stream
   if ((e?.code === 3 || e?.code === 4) && !S.useStream && !S.pb?.hls) { S.useStream = true; return load(pos()); }
-  // Nothing else played: as the last resort have the server convert it fully (H.264 + AAC), like Jellyfin's own apps do
-  if (!S.forceTranscode && !/not allowed|conversion turned off|signed in|401|403/i.test(e?.message || '')) { S.forceTranscode = true; S.nativeHls = false; toast('Converting this video so it can play here...'); return load(pos()); }
   const details = playbackFailure(e, native?.platform, source);
   // Keep failures local and actionable without requesting server conversion.
   const el = root();
