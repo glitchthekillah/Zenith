@@ -6,11 +6,12 @@ function environment({focus=true,reduce=false,webgl=true}={}){
  const gl=new Proxy({getProgramParameter:()=>true,getExtension:()=>null,drawArrays:()=>draws++},{get:(o,k)=>k in o?o[k]:(()=>({}))});
  const canvas={getContext:()=>webgl?gl:null,remove(){},get width(){return sizes.at(-1)||0},set width(n){sizes.push(n)},height:0};
  const app={addEventListener:(name,fn,options)=>{listeners['app:'+name]={fn,options}}};
- const doc={body:{classList},documentElement:{dataset:{},},hidden:false,hasFocus:()=>focus,getElementById:id=>id==='sky2'?canvas:id==='app'?app:null,addEventListener:(name,fn)=>{listeners['doc:'+name]={fn}}};
+ const doc={body:{classList,dataset:{}},documentElement:{dataset:{},},hidden:false,hasFocus:()=>focus,querySelector:()=>null,getElementById:id=>id==='sky2'?canvas:id==='app'?app:null,addEventListener:(name,fn)=>{listeners['doc:'+name]={fn}}};
  const context={document:doc,window:{},innerWidth:1200,innerHeight:800,devicePixelRatio:1,localStorage:{getItem:()=>null},matchMedia:()=>({matches:reduce}),performance:{now:()=>time},MutationObserver:class{constructor(fn){this.fn=fn}observe(){}},addEventListener:(name,fn)=>{listeners[name]={fn}},requestAnimationFrame:fn=>raf.push(fn),setTimeout:(fn,delay)=>{timers.set(++timerId,{fn,at:time+delay});return timerId},clearTimeout:id=>timers.delete(id)};
+ context.setInterval=(fn,delay)=>{const id=++timerId;timers.set(id,{fn,at:time+delay,delay});return id;};
  vm.createContext(context);
  const run=file=>vm.runInContext(fs.readFileSync(path.join(root,'app/js',file),'utf8'),context);
- function step(dt){time+=dt;const pending=raf;raf=[];pending.forEach(fn=>fn(time));for(const [id,t]of timers)if(t.at<=time){timers.delete(id);t.fn()}}
+ function step(dt){time+=dt;const pending=raf;raf=[];pending.forEach(fn=>fn(time));for(const [id,t]of timers)if(t.at<=time){if(t.delay)t.at=time+t.delay;else timers.delete(id);t.fn()}}
  return {run,step,context,classes,sizes,listeners,get draws(){return draws},scroll(){listeners['app:scroll'].fn({target:app})}};
 }
 test('scroll activity is passive and clears after the final event',()=>{const e=environment();e.run('scroll.js');e.scroll();assert(e.classes.has('scrolling'));assert.equal(e.listeners['app:scroll'].options.passive,true);assert.equal(e.listeners['app:scroll'].options.capture,true);e.step(150);e.scroll();e.step(150);assert(e.classes.has('scrolling'));e.step(51);assert(!e.classes.has('scrolling'))});

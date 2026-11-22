@@ -37,7 +37,7 @@ test('Home displays a fast server without waiting for another server',async()=>{
   w.c.groups.with=k=>k==='jellyfin'?[fast,slow]:[];
   w.c.groups.run=(g,f)=>{const prev=active;active=g;try{return f();}finally{active=prev;}};
   w.c.jf.resume=()=>active===slow?never():Promise.resolve([{Id:'a',Name:'Fast movie',Type:'Movie'}]);
-  for(const name of ['nextUp','views'])w.c.jf[name]=()=>active===slow?never():Promise.resolve([]);
+  for(const name of ['nextUp','upcoming','views'])w.c.jf[name]=()=>active===slow?never():Promise.resolve([]);
   w.c.jf.items=()=>active===slow?never():Promise.resolve({Items:[]});
   w.c.card=it=>it.Name;w.c.greeting=()=>'';
   w.routes.home();w.jobs[0](h=>painted+=h,()=>true);await flush();
