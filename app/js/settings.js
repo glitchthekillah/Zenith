@@ -36,7 +36,61 @@ export function applyAccent() {
   // On light backgrounds the highlight is deepened until it reads as text
   let t = hl, k = 0; if (document.documentElement.dataset.theme === 'light') while (lum(t) > 0.18 && k++ < 12) t = darken(t, 0.12);
   root.setProperty('--hl-text', t);
+  if (styleNow() !== 'zenith') ACCENT_VARS.forEach((v) => root.removeProperty(v));
 }
+// Style presets: each one is a whole visual language (layout details, type, shapes, motion, sound), not a recolour.
+export const STYLES = [
+  ['zenith', 'Zenith', 'Night sky, glass panels, amber to pink.'],
+  ['marathon', 'Marathon', 'Acid graphics, hard edges, specimen frames, glitch motion.'],
+  ['phantom', 'Phantom', 'Red, black and white. Slanted panels, cut-paper type, kinetic menus.'],
+  ['codec', 'Codec', 'Green phosphor terminal. Scanlines, glowing text, mission dossiers.'],
+  ['atelier', 'Atelier', 'Editorial film journal. Serif type, hairlines, plates and captions.'],
+];
+// Marathon's own accent: the colour of its tags, frames and buttons
+export const M_ACCENTS = [['acid', 'Acid', '#c8ff1e'], ['hot', 'Hot pink', '#ff2b6e'], ['cyan', 'Cyan', '#16e6ff'], ['hazard', 'Hazard', '#ffb000']];
+export const styleNow = () => (STYLES.some(([k]) => k === settings.look.style) ? settings.look.style : 'zenith');
+const ACCENT_VARS = ['--amber', '--amber-rgb', '--btn1', '--btn2', '--pink-rgb', '--btn-ink', '--hl-text'];
+export function applyStyle() {
+  const st = styleNow(), root = document.documentElement, prev = root.dataset.style || 'zenith';
+  if (st === 'zenith') delete root.dataset.style; else root.dataset.style = st;
+  if (prev !== st) { root.classList.add('style-swap'); clearTimeout(applyStyle.t); applyStyle.t = setTimeout(() => root.classList.remove('style-swap'), 700); }
+  const m = M_ACCENTS.find(([k]) => k === settings.look.mAccent) || M_ACCENTS[0];
+  root.style.setProperty('--m-acc', m[2]); root.style.setProperty('--m-acc-rgb', m[2].match(/\w\w/g).map((h) => parseInt(h, 16)).join(','));
+  applyAccent();
+  if (st === 'zenith') window.zenithSky?.set(skyColors());   // wakes the sky back up
+}
+// Marathon UI sounds: short synthetic ticks on hover and a blip on press. Built in code, no audio files.
+let sfx = null;
+function blip(freq, len, vol) {
+  if (styleNow() !== 'marathon' || settings.look.mSound === false) return;
+  try {
+    sfx ??= new AudioContext(); if (sfx.state === 'suspended') return;
+    const t = sfx.currentTime, o = sfx.createOscillator(), g = sfx.createGain();
+    o.type = 'square'; o.frequency.setValueAtTime(freq, t); o.frequency.exponentialRampToValueAtTime(freq * 0.6, t + len);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    o.connect(g).connect(sfx.destination); o.start(t); o.stop(t + len + 0.01);
+  } catch {}
+}
+let lastHover = null;
+document.addEventListener('pointerover', (e) => {
+  const el = e.target.closest?.('.btn,.card,.navlink,.icon-btn,.chip,.set-tabs button,.libtile,.season,.ep');
+  if (el && el !== lastHover) { lastHover = el; blip(2400, 0.018, 0.018); }
+}, true);
+document.addEventListener('pointerdown', (e) => {
+  if (styleNow() !== 'marathon') return;
+  if (sfx?.state === 'suspended') sfx.resume().catch(() => {});
+  if (e.target.closest?.('button,a,.card')) blip(920, 0.05, 0.035);
+}, true);
+document.addEventListener('click', (e) => {
+  const sp = e.target.closest?.('[data-style-pick]');
+  if (sp) { settings.look = { ...settings.look, style: sp.dataset.stylePick }; save(); applyStyle(); render(); return; }
+  const ma = e.target.closest?.('[data-m-accent]');
+  if (ma) { settings.look = { ...settings.look, mAccent: ma.dataset.mAccent }; save(); applyStyle(); document.querySelectorAll('[data-m-accent]').forEach((b) => b.classList.toggle('on', b === ma)); }
+});
+document.addEventListener('change', (e) => {
+  const ms = e.target.closest?.('[data-m-sound]');
+  if (ms) { settings.look = { ...settings.look, mSound: ms.checked }; save(); }
+});
 // Background styles: the moving liquid (default), aurora, nebula, silk (all drawn by sky.js), or one solid colour
 export const BG_MODES = [['liquid', 'Liquid', 'Thick, slow and alive'], ['aurora', 'Aurora', 'Northern lights'], ['nebula', 'Nebula', 'Clouds and stars'], ['silk', 'Silk', 'Ribbons of light'], ['embers', 'Embers', 'Sparks drifting up'], ['contours', 'Contours', 'A moving map of hills'], ['rays', 'Rays', 'Light through haze'], ['showcase', 'Showcase', "What's on your servers"], ['image', 'Your picture', 'Upload your own'], ['title', 'A title', 'Search and pick one'], ['solid', 'Solid', 'One colour you pick']];
 const PICTURE = ['showcase', 'image', 'title'];
@@ -242,10 +296,13 @@ route('settings', async (sub) => {
           <div class="profile-acts"><label class="btn small gold" style="cursor:pointer">${icon('user')} ${hasAvatar() ? 'Change picture' : 'Choose a picture'}<input type="file" accept="image/*" data-avatar hidden></label>${hasAvatar() ? '<button class="btn small" data-avatar-clear>Remove</button>' : ''}</div></div></div>
       ${group('', `<label class="set-row"><div><b>Name</b><small>Used for your greeting on Home.</small></div><input class="inp" data-set="profile.name" value="${esc(settings.profile.name)}" placeholder="${esc(settings.servers.jellyfin?.name || 'Your name')}" maxlength="32"></label>`)}`)}
     ${pane('look', 'Appearance', 'Light or dark, and the colours of the moving background.', `
+      ${group('Style', `<div class="style-cards">${STYLES.map(([k, l, d]) => `<button class="style-card ${styleNow() === k ? 'on' : ''}" data-style-pick="${k}"><span class="sc-prev sc-${k}"><i></i><i></i><i></i><b></b></span><span class="sc-txt"><b>${l}</b><small>${d}</small></span></button>`).join('')}</div>`)}
+      ${styleNow() === 'marathon' ? group('Marathon', `<div class="set-row"><div><b>Accent</b><small>The colour of tags, frames and buttons.</small></div><div class="m-accents">${M_ACCENTS.map(([k, l, c]) => `<button class="m-accent ${(settings.look.mAccent || 'acid') === k ? 'on' : ''}" data-m-accent="${k}" title="${l}"><i style="background:${c}"></i>${l}</button>`).join('')}</div></div>
+        <label class="set-row"><div><b>Interface sounds</b><small>Short synthetic ticks when you hover and click.</small></div><span class="switch"><input type="checkbox" data-m-sound ${settings.look.mSound === false ? '' : 'checked'}><span></span></span></label>`) : ''}
       ${group('Theme', `<div class="themes">${[['dark', 'Dark'], ['light', 'Light'], ['system', 'Match my system']].map(([v, l]) => `<button class="theme-card ${settings.theme === v ? 'on' : ''}" data-theme-pick="${v}"><span class="tc ${v}"><i></i><i></i><i></i></span>${l}</button>`).join('')}</div>`)}
-      ${group('Highlight and buttons', `<div class="accents">${ACCENTS.map(([k, l, h, b]) => `<button class="accent ${(settings.look.accent?.preset || 'zenith') === k && !settings.look.accent?.hl ? 'on' : ''}" data-accent="${k}"><span class="ac-btn" style="background:linear-gradient(135deg,${b[0]},${b[1]})"></span><span class="ac-dot" style="background:${h}"></span>${l}</button>`).join('')}</div>
+      ${styleNow() !== 'zenith' ? '' : group('Highlight and buttons', `<div class="accents">${ACCENTS.map(([k, l, h, b]) => `<button class="accent ${(settings.look.accent?.preset || 'zenith') === k && !settings.look.accent?.hl ? 'on' : ''}" data-accent="${k}"><span class="ac-btn" style="background:linear-gradient(135deg,${b[0]},${b[1]})"></span><span class="ac-dot" style="background:${h}"></span>${l}</button>`).join('')}</div>
         <div class="sky-picks" style="padding-bottom:8px">${[['hl', 'Highlight', accentNow().hl], ['b0', 'Button start', accentNow().btn[0]], ['b1', 'Button end', accentNow().btn[1]]].map(([k, l, v]) => `<label><input type="color" data-accent-pick="${k}" value="${v}">${l}</label>`).join('')}</div>`)}
-      ${group('Background', `<div class="bg-modes" data-bgm="${bgMode()}">${BG_MODES.map(([k, l, d]) => `<button class="bg-mode ${bgMode() === k ? 'on' : ''}" data-bg-mode="${k}">${k === 'solid' ? `<span class="bgm-prev bgm-solid" style="background:${settings.look.solid || '#14111c'}"></span>` : PICTURE.includes(k) ? `<span class="bgm-prev bgm-pic bgm-${k}"${k === 'image' && savedImage() ? ` style="background-image:url('${savedImage()}')"` : k === 'title' && settings.look.pick?.thumb ? ` style="background-image:url('${esc(settings.look.pick.thumb)}')"` : ''}></span>` : `<canvas class="bgm-prev" data-sky-preview="${k}" width="256" height="140"></canvas>`}<b>${l}</b><small>${d}</small></button>`).join('')}</div>
+      ${styleNow() !== 'zenith' ? '' : group('Background', `<div class="bg-modes" data-bgm="${bgMode()}">${BG_MODES.map(([k, l, d]) => `<button class="bg-mode ${bgMode() === k ? 'on' : ''}" data-bg-mode="${k}">${k === 'solid' ? `<span class="bgm-prev bgm-solid" style="background:${settings.look.solid || '#14111c'}"></span>` : PICTURE.includes(k) ? `<span class="bgm-prev bgm-pic bgm-${k}"${k === 'image' && savedImage() ? ` style="background-image:url('${savedImage()}')"` : k === 'title' && settings.look.pick?.thumb ? ` style="background-image:url('${esc(settings.look.pick.thumb)}')"` : ''}></span>` : `<canvas class="bgm-prev" data-sky-preview="${k}" width="256" height="140"></canvas>`}<b>${l}</b><small>${d}</small></button>`).join('')}</div>
         <div class="set-row bg-image-row" style="border:0"><div><b>Your picture</b><small>Kept on this device only.</small></div><label class="btn small">Choose a picture<input type="file" accept="image/*" data-bg-upload hidden></label></div>
         <div class="bg-title-row"><div class="field">${icon('search')}<input data-bg-search placeholder="Search a show, movie or book" autocomplete="off"></div><div class="bg-results" id="bg-results">${settings.look.pick?.title ? `<small>Using <b>${esc(settings.look.pick.title)}</b>.</small>` : ''}</div></div>
         <div class="set-row bg-solid-row" style="border:0"><div><b>Colour</b><small>The whole background in this one colour.</small></div><label class="sky-picks"><input type="color" data-bg-solid value="${settings.look.solid || '#14111c'}"></label></div>

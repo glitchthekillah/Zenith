@@ -1,0 +1,90 @@
+/* ZENITH // STYLE PRESET 05 : "ATELIER" — an editorial film journal. Serif display, hairlines, generous
+   whitespace, numbered sections in roman numerals, posters mounted like plates with captions. Ivory paper in
+   light mode, deep charcoal ink in dark. One accent: oxblood. */
+:root[data-style=atelier]{--a-ox:#9b2335;
+  --bg:#141312;--text:#ece6da;--mute:#a39b8e;--dim:#6e675d;--line:rgba(236,230,218,.12);--line2:rgba(236,230,218,.26);
+  --glass:transparent;--glass2:rgba(236,230,218,.04);--blur:none;--panel:#1a1918;--well:#100f0e;
+  --amber:#d9b98a;--gold2:#d9b98a;--pink:var(--a-ox);--hl-text:#d9b98a;--btn1:#ece6da;--btn2:#ece6da;--btn-ink:#141312;--grad:#ece6da;--grad3:#ece6da;
+  --disp:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;--ease:cubic-bezier(.2,.7,.2,1)}
+:root[data-style=atelier][data-theme=light]{--bg:#f5f0e6;--text:#1d1a16;--mute:#5d564c;--dim:#948b7e;--line:rgba(29,26,22,.12);--line2:rgba(29,26,22,.28);
+  --panel:#faf6ee;--well:#ece6da;--amber:var(--a-ox);--gold2:var(--a-ox);--hl-text:var(--a-ox);--btn1:#1d1a16;--btn2:#1d1a16;--btn-ink:#f5f0e6;--grad:#1d1a16;--grad3:#1d1a16;color-scheme:light}
+:root[data-style=atelier] .sky{background:var(--bg)!important}
+:root[data-style=atelier] .sky canvas,:root[data-style=atelier] .sky i,:root[data-style=atelier] .sky .sky-img{display:none!important}
+:root[data-style=atelier] .sky::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E")}
+:root[data-style=atelier] *{box-shadow:none!important}
+:root[data-style=atelier] h1,:root[data-style=atelier] h2,:root[data-style=atelier] .row-head h3,:root[data-style=atelier] .card b,:root[data-style=atelier] .brand b,:root[data-style=atelier] .detail .tagline{font-family:var(--disp);font-weight:400;letter-spacing:-.01em}
+:root[data-style=atelier] .kicker{font:600 10.5px/1 Inter,sans-serif!important;letter-spacing:.32em!important;text-transform:uppercase;color:var(--hl-text)!important;background:none}
+:root[data-style=atelier] .kicker::before{display:none!important}
+:root[data-style=atelier] .top{background:transparent;border:0;border-bottom:1px solid var(--line2);backdrop-filter:none;border-radius:0!important}
+:root[data-style=atelier] .brand .orb{display:none}
+:root[data-style=atelier] .brand b{font:italic 400 28px/1 var(--disp);text-transform:none;letter-spacing:-.02em}
+:root[data-style=atelier] .navlink{font:500 12px/1 Inter,sans-serif;letter-spacing:.18em;text-transform:uppercase;background:none!important;color:var(--mute);border-radius:0!important}
+:root[data-style=atelier] .navlink .i{display:none}
+:root[data-style=atelier] .navlink.on{color:var(--text)!important;background:none!important;text-decoration:underline;text-underline-offset:9px;text-decoration-thickness:1px}
+:root[data-style=atelier] .top .field{background:transparent;border:0;border-bottom:1px solid var(--line2);border-radius:0!important}
+:root[data-style=atelier] .top .field input{font-family:var(--disp);font-style:italic;font-size:15px}
+:root[data-style=atelier] .me,:root[data-style=atelier] .av-letter{background:transparent!important;color:var(--text)!important;border:1px solid var(--line2);font-family:var(--disp)}
+:root[data-style=atelier] .btn{border-radius:0!important;background:transparent;border:1px solid var(--text);color:var(--text);font:500 11.5px/1 Inter,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+:root[data-style=atelier] .btn:hover{background:var(--text);color:var(--bg)}
+:root[data-style=atelier] .btn.gold,:root[data-style=atelier] .btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+:root[data-style=atelier] .btn.gold:hover,:root[data-style=atelier] .btn.primary:hover{background:var(--a-ox);border-color:var(--a-ox);color:#fff}
+:root[data-style=atelier] .chip{border-radius:0!important;border:0;border-bottom:1px solid transparent;background:none;font:500 12px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase}
+:root[data-style=atelier] .chip.on{border-bottom-color:var(--text);background:none;color:var(--text)}
+:root[data-style=atelier] .hello,:root[data-style=atelier] .panel,:root[data-style=atelier] .set-card,:root[data-style=atelier] .srv-card,:root[data-style=atelier] dialog.modal{background:transparent;border:0;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);border-radius:0!important}
+:root[data-style=atelier] .hello-text h1{font:italic 400 clamp(36px,4.4vw,64px)/1 var(--disp)}
+:root[data-style=atelier] .hello-text h1 span,:root[data-style=atelier] .hello-text h1 em,:root[data-style=atelier] .hello-text h1 b{color:var(--hl-text);-webkit-text-fill-color:currentColor;background:none;font-style:italic}
+:root[data-style=atelier] .hello-pic{border:1px solid var(--line2);filter:grayscale(1)}
+:root[data-style=atelier] .recap-chip,:root[data-style=atelier] .hello-stats>*{border:0;background:none;font:italic 400 15px var(--disp);color:var(--mute)}
+:root[data-style=atelier] .hello-resume,:root[data-style=atelier] .hello-surprise{border:1px solid var(--line2);background:none;border-radius:0!important}
+:root[data-style=atelier] .hero{border-radius:0!important;border:0;background:transparent}
+:root[data-style=atelier] .hero .hero-art,:root[data-style=atelier] .hero>img{filter:grayscale(.3) sepia(.15) contrast(1.05)}
+:root[data-style=atelier] .hero::after{background:linear-gradient(90deg,var(--bg) 30%,transparent 75%)!important}
+:root[data-style=atelier] .hero p{font:400 18px/1.55 var(--disp);max-width:40ch}
+:root[data-style=atelier] .hero .meta{font:italic 400 14px var(--disp);color:var(--mute)}
+:root[data-style=atelier] #view{counter-reset:a-row}
+:root[data-style=atelier] .row{counter-increment:a-row}
+:root[data-style=atelier] .row-head{border-bottom:1px solid var(--line2);padding-bottom:10px}
+:root[data-style=atelier] .row-head h3{font-size:30px;font-style:italic}
+:root[data-style=atelier] .row-head h3::before{content:counter(a-row,upper-roman) '.'!important;font:400 14px var(--disp)!important;font-style:normal!important;color:var(--hl-text);margin-right:12px;background:none!important;position:static!important;width:auto!important;height:auto!important;display:inline!important}
+:root[data-style=atelier] .row-head h3::after{display:none}
+:root[data-style=atelier] .row-head a{font:500 11px Inter,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+:root[data-style=atelier] .arrow{border-radius:0!important;background:var(--panel);border:1px solid var(--line2)}
+:root[data-style=atelier] .card .art{border-radius:0!important;padding:8px;background:var(--panel);border:1px solid var(--line)}
+:root[data-style=atelier] .card .art img{filter:grayscale(.25) sepia(.08)}
+:root[data-style=atelier] .card:hover .art{transform:translateY(-4px);border-color:var(--line2)}
+:root[data-style=atelier] .card:hover .art img{filter:none}
+:root[data-style=atelier] .card b{font-size:16px;margin-top:10px;font-style:italic}
+:root[data-style=atelier] .card small{font:500 10.5px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+:root[data-style=atelier] .card .bar{border-radius:0!important;height:2px}:root[data-style=atelier] .card .bar i{background:var(--a-ox)!important}
+:root[data-style=atelier] .card .play-over span{border-radius:0!important;background:var(--text);color:var(--bg)}
+:root[data-style=atelier] .check,:root[data-style=atelier] .badge{border-radius:0!important}
+:root[data-style=atelier] .detail .backdrop img{filter:grayscale(.5) sepia(.2) brightness(.5)}
+:root[data-style=atelier][data-theme=light] .detail .backdrop img{filter:grayscale(.6) sepia(.2) brightness(1.2) opacity(.25)}
+:root[data-style=atelier] .detail h1{font:400 clamp(44px,6vw,92px)/.95 var(--disp);letter-spacing:-.03em}
+:root[data-style=atelier] .detail .tagline{font-style:italic;font-size:22px;color:var(--mute)}
+:root[data-style=atelier] .facts .pill{border-radius:0!important;border:0;border-right:1px solid var(--line2);background:none}
+:root[data-style=atelier] .overview{font:400 18px/1.65 var(--disp);max-width:62ch}
+:root[data-style=atelier] .overview::first-letter{float:left;font-size:3.4em;line-height:.85;padding:4px 8px 0 0;color:var(--hl-text)}
+:root[data-style=atelier] .detail-in>.art{border-radius:0!important;padding:10px;background:var(--panel);border:1px solid var(--line2)}
+:root[data-style=atelier] .person .face{border-radius:0!important;filter:grayscale(1)}
+:root[data-style=atelier] .person b{font:italic 400 15px var(--disp)}
+:root[data-style=atelier] .page-head h1{font:italic 400 clamp(52px,7vw,110px)/.9 var(--disp);background:none;-webkit-text-fill-color:currentColor}
+:root[data-style=atelier] .set-tabs button{border-radius:0!important;font:500 11.5px Inter;letter-spacing:.16em;text-transform:uppercase}
+:root[data-style=atelier] .set-tabs button.on{background:none;color:var(--text);text-decoration:underline;text-underline-offset:6px}
+:root[data-style=atelier] .set-row b{font:400 17px var(--disp)}
+:root[data-style=atelier] .switch span{border-radius:0!important}:root[data-style=atelier] .switch span::after{border-radius:0!important}:root[data-style=atelier] .switch input:checked+span{background:var(--text)}
+:root[data-style=atelier] .pl-title b{font:italic 400 26px/1 var(--disp)}
+:root[data-style=atelier] .pl-seek .track,:root[data-style=atelier] .pl-seek .done,:root[data-style=atelier] .pl-seek .buf{border-radius:0!important;height:2px}
+:root[data-style=atelier] .pl-seek .done{background:var(--a-ox)!important}
+:root[data-style=atelier] .pl-btn,:root[data-style=atelier] .pl-btn.play,:root[data-style=atelier] .pl-menu,:root[data-style=atelier] .toast{border-radius:0!important}
+:root[data-style=atelier] .toast{background:var(--panel);border:1px solid var(--line2);font-family:var(--disp)}
+:root[data-style=atelier] #view>*{animation:a-in .7s var(--ease) both}
+@keyframes a-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){:root[data-style=atelier] #view>*{animation:none}}
+
+/* Light mode keeps the hero and player as dark plates so artwork and type still read */
+:root[data-style=atelier][data-theme=light] .hero,:root[data-style=atelier][data-theme=light] #player{--bg:#141312;--text:#ece6da;--mute:#a39b8e;--dim:#6e675d;--line2:rgba(236,230,218,.26);--panel:#1a1918;--hl-text:#d9b98a;--btn1:#ece6da;--btn2:#ece6da;--btn-ink:#141312;--grad:#ece6da;color:var(--text);background:var(--bg)}
+:root[data-style=atelier] .hello-pic .av-letter{background:var(--panel)!important;border:0}
+
+:root[data-style=atelier]{--amber-rgb:217,185,138;--pink-rgb:155,35,53}
+:root[data-style=atelier][data-theme=light]{--amber-rgb:155,35,53;--pink-rgb:155,35,53}

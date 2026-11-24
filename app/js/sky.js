@@ -224,7 +224,7 @@ float fbm(vec2 p){float v=0.,a=.5;mat2 R=mat2(.8,.6,-.6,.8);for(int i=0;i<5;i++)
   const still = () => reduce || document.body.classList.contains('calm') || document.body.classList.contains('playing') || document.body.classList.contains('mini') || !!document.body.dataset.bg;
   function draw(now) {
     run = false;
-    if (document.hidden) return;
+    if (document.hidden || document.documentElement.dataset.style) return;   // other style presets draw their own background
     // About 30 frames a second. In the background, fewer, but only once the sky has slowed
     // down enough that it doesn't look choppy.
     const gap = !isFocused() && speed < 0.15 ? 150 : document.body.classList.contains('scrolling') ? 50 : 33;

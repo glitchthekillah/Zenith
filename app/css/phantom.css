@@ -1,0 +1,101 @@
+/* ZENITH // STYLE PRESET 03 : "PHANTOM"  — kinetic red, black and white. Slanted panels, cut-paper headings,
+   jagged bursts, menus that lunge in. Light mode flips to white paper with red and black ink. */
+:root[data-style=phantom]{--p-red:#e8141e;--p-ink:#0a0a0a;--p-paper:#f4f1ea;
+  --bg:#0a0a0a;--text:#f4f1ea;--mute:#b9b4aa;--dim:#7d776d;--line:rgba(244,241,234,.12);--line2:rgba(244,241,234,.3);
+  --glass:#141414;--glass2:#1c1c1c;--blur:none;--panel:#121212;--well:#050505;
+  --amber:var(--p-red);--gold2:var(--p-red);--pink:var(--p-red);--hl-text:var(--p-red);--btn1:var(--p-red);--btn2:var(--p-red);--btn-ink:#fff;--grad:var(--p-red);--grad3:var(--p-red);
+  --disp:Impact,"Haettenschweiler","Arial Narrow Bold",sans-serif;--skew:-8deg}
+:root[data-style=phantom][data-theme=light]{--bg:#f4f1ea;--text:#0a0a0a;--mute:#4a4640;--dim:#857f75;--line:rgba(10,10,10,.12);--line2:rgba(10,10,10,.4);--glass:#fff;--glass2:#ebe7de;--panel:#fff;--well:#e6e2d8;color-scheme:light}
+:root[data-style=phantom] *,:root[data-style=phantom] *::before,:root[data-style=phantom] *::after{border-radius:0!important}
+:root[data-style=phantom] ::selection{background:var(--p-red);color:#fff}
+:root[data-style=phantom] .sky{background:var(--bg)!important}
+:root[data-style=phantom] .sky canvas,:root[data-style=phantom] .sky i,:root[data-style=phantom] .sky .sky-img{display:none!important}
+:root[data-style=phantom] .sky::before{content:'';position:absolute;inset:-20%;background:repeating-conic-gradient(from 0deg at 80% 10%,rgba(232,20,30,.10) 0 4deg,transparent 4deg 14deg)}
+:root[data-style=phantom] .sky::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 1px 1px,rgba(127,127,127,.18) 1px,transparent 1.5px) 0 0/9px 9px;mix-blend-mode:normal}
+:root[data-style=phantom][data-theme=light] .sky::before{background:repeating-conic-gradient(from 0deg at 80% 10%,rgba(232,20,30,.08) 0 4deg,transparent 4deg 14deg)}
+:root[data-style=phantom] h1,:root[data-style=phantom] h2,:root[data-style=phantom] .row-head h3,:root[data-style=phantom] .card b,:root[data-style=phantom] .brand b{font-family:var(--disp);text-transform:uppercase;letter-spacing:.01em;font-weight:400}
+:root[data-style=phantom] .kicker{font:italic 900 12px/1 Georgia,serif!important;letter-spacing:.06em!important;text-transform:uppercase;color:#fff!important;background:var(--p-red);padding:5px 10px;display:inline-block;transform:skew(var(--skew)) rotate(-2deg);margin-bottom:12px}
+:root[data-style=phantom] .kicker::before{display:none!important}
+/* top bar: a slashed red band */
+:root[data-style=phantom] .top{background:var(--p-ink);border:0;box-shadow:none;backdrop-filter:none;transform:skew(var(--skew));border-bottom:4px solid var(--p-red)}
+:root[data-style=phantom][data-theme=light] .top{background:var(--p-ink);--text:#f4f1ea;--mute:#b9b4aa;color:#f4f1ea}
+:root[data-style=phantom] .top>*{transform:skew(calc(var(--skew) * -1))}
+:root[data-style=phantom] .brand .orb{background:var(--p-red);clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);animation:none;box-shadow:none}
+:root[data-style=phantom] .brand b{font-size:24px}
+:root[data-style=phantom] .navlink{font:900 13px/1 var(--disp);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);background:none!important}
+:root[data-style=phantom] .navlink.on{background:var(--p-red)!important;color:#fff!important;transform:skew(var(--skew)) rotate(-3deg) scale(1.08)}
+:root[data-style=phantom] .navlink.on .i{stroke:#fff}
+:root[data-style=phantom] .navlink:hover{color:#fff}
+:root[data-style=phantom] .top .field{background:#fff;border:0;transform:skew(var(--skew))}
+:root[data-style=phantom] .top .field input{color:#0a0a0a;font-weight:700}
+:root[data-style=phantom] .top .field .i{color:#0a0a0a}
+:root[data-style=phantom] .me,:root[data-style=phantom] .av-letter{background:var(--p-red)!important;color:#fff!important;font-family:var(--disp)}
+/* buttons: slanted slabs */
+:root[data-style=phantom] .btn{font:900 15px/1 var(--disp);letter-spacing:.04em;text-transform:uppercase;background:var(--text);color:var(--bg);border:0;box-shadow:none;transform:skew(var(--skew));transition:transform .12s cubic-bezier(.3,1.6,.5,1)}
+:root[data-style=phantom] .btn:hover{transform:skew(var(--skew)) translate(3px,-3px) rotate(-2deg);box-shadow:-5px 5px 0 var(--p-red)}
+:root[data-style=phantom] .btn.gold,:root[data-style=phantom] .btn.primary{background:var(--p-red);color:#fff;box-shadow:5px 5px 0 var(--text)}
+:root[data-style=phantom] .btn.gold:hover,:root[data-style=phantom] .btn.primary:hover{box-shadow:-6px 6px 0 var(--text)}
+:root[data-style=phantom] .icon-btn:hover{background:var(--p-red);color:#fff}
+:root[data-style=phantom] .chip{font:900 13px/1 var(--disp);text-transform:uppercase;border:2px solid var(--text);background:transparent;transform:skew(var(--skew))}
+:root[data-style=phantom] .chip.on{background:var(--p-red);border-color:var(--p-red);color:#fff}
+/* panels lean */
+:root[data-style=phantom] .hello,:root[data-style=phantom] .panel,:root[data-style=phantom] .set-card,:root[data-style=phantom] .srv-card,:root[data-style=phantom] dialog.modal{background:var(--panel);border:3px solid var(--text);box-shadow:8px 8px 0 var(--p-red)}
+:root[data-style=phantom] .hello{transform:rotate(-.6deg)}
+:root[data-style=phantom] .hello-text h1{font-size:clamp(34px,4vw,58px);line-height:.95}
+:root[data-style=phantom] .hello-text h1 span,:root[data-style=phantom] .hello-text h1 em,:root[data-style=phantom] .hello-text h1 b{color:var(--p-red);-webkit-text-fill-color:currentColor;background:none}
+:root[data-style=phantom] .hello-pic{border:4px solid var(--p-red);box-shadow:none;transform:rotate(4deg)}
+:root[data-style=phantom] .recap-chip,:root[data-style=phantom] .hello-stats>*{background:var(--text);color:var(--bg);border:0;font:900 12px/1 var(--disp);text-transform:uppercase;transform:skew(var(--skew))}
+:root[data-style=phantom] .hello-resume{border:3px solid var(--p-red);background:var(--panel);box-shadow:none}
+:root[data-style=phantom] .hello-surprise{background:var(--p-red);color:#fff;border:0;font:900 14px var(--disp);text-transform:uppercase;transform:skew(var(--skew))}
+/* hero: red-washed and slashed */
+:root[data-style=phantom] .hero{border:0;background:var(--p-ink);box-shadow:none;clip-path:polygon(0 0,100% 0,100% 88%,96% 100%,0 100%)}
+:root[data-style=phantom] .hero .hero-art,:root[data-style=phantom] .hero>img{filter:grayscale(1) contrast(1.4)}
+:root[data-style=phantom] .hero::before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(100deg,transparent 52%,rgba(232,20,30,.55) 52.2%,rgba(232,20,30,.55) 58%,transparent 58.2%);mix-blend-mode:multiply}
+:root[data-style=phantom] .hero-in{--text:#f4f1ea;--mute:#c9c4ba;color:#f4f1ea}
+:root[data-style=phantom] .hero .hero-logo{filter:drop-shadow(5px 5px 0 var(--p-red))}
+:root[data-style=phantom] .hero .meta{font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+/* rows */
+:root[data-style=phantom] .row-head h3{font-size:30px;display:inline-block;background:var(--text);color:var(--bg);padding:2px 14px 0;transform:skew(var(--skew)) rotate(-1.5deg)}
+:root[data-style=phantom] .row-head h3::before,:root[data-style=phantom] .row-head h3::after{display:none}
+:root[data-style=phantom] .row-head a{font:900 13px var(--disp);text-transform:uppercase;color:var(--p-red)}
+:root[data-style=phantom] .arrow{background:var(--p-red);color:#fff;border:0}
+/* cards tilt and lunge */
+:root[data-style=phantom] .card .art{border:3px solid var(--text);box-shadow:none;transition:transform .14s cubic-bezier(.3,1.6,.5,1)}
+:root[data-style=phantom] .strip>.card:nth-child(odd) .art{transform:rotate(-1.2deg)}
+:root[data-style=phantom] .strip>.card:nth-child(even) .art{transform:rotate(1deg)}
+:root[data-style=phantom] .card:hover .art,:root[data-style=phantom] .card:focus-visible .art{transform:rotate(-3deg) scale(1.05);border-color:var(--p-red);box-shadow:8px 8px 0 var(--p-red)}
+:root[data-style=phantom] .card b{font-size:16px;margin-top:6px}
+:root[data-style=phantom] .card small{font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.04em}
+:root[data-style=phantom] .card .bar i{background:var(--p-red)!important}
+:root[data-style=phantom] .card .play-over span,:root[data-style=phantom] .check{background:var(--p-red)!important;color:#fff!important}
+/* detail */
+:root[data-style=phantom] .detail .backdrop img{filter:grayscale(1) contrast(1.35) brightness(.5)}
+:root[data-style=phantom] .detail h1{font-size:clamp(44px,6vw,96px);line-height:.88;text-shadow:5px 5px 0 var(--p-red)}
+:root[data-style=phantom][data-theme=light] .detail .backdrop img{filter:grayscale(1) contrast(1.2) brightness(1.4) opacity(.35)}
+:root[data-style=phantom] .detail .tagline{font:italic 700 18px/1.3 Georgia,serif;color:var(--p-red)}
+:root[data-style=phantom] .facts .pill{border:2px solid var(--text);font-weight:800}
+:root[data-style=phantom] .detail-in>.art{border:4px solid var(--text);box-shadow:12px 12px 0 var(--p-red);transform:rotate(-2deg)}
+:root[data-style=phantom] .overview{font-size:15px;font-weight:500}
+:root[data-style=phantom] .person .face{border:3px solid var(--text);transform:rotate(-3deg)}
+:root[data-style=phantom] .person:nth-child(even) .face{transform:rotate(3deg)}
+:root[data-style=phantom] .person b{font-family:var(--disp);text-transform:uppercase;font-weight:400;font-size:14px}
+:root[data-style=phantom] .season.on{background:var(--p-red);color:#fff}
+:root[data-style=phantom] .page-head h1{font-size:clamp(48px,7vw,110px);line-height:.85;background:none;-webkit-text-fill-color:currentColor;text-shadow:6px 6px 0 var(--p-red)}
+:root[data-style=phantom] .set-tabs button{font:900 14px var(--disp);text-transform:uppercase}
+:root[data-style=phantom] .set-tabs button.on{background:var(--p-red);color:#fff;transform:skew(var(--skew))}
+:root[data-style=phantom] .switch input:checked+span{background:var(--p-red)}
+:root[data-style=phantom] .pl-seek .done{background:var(--p-red)!important}
+:root[data-style=phantom] .pl-seek .knob{background:#fff;box-shadow:0 0 0 3px var(--p-red)}
+:root[data-style=phantom] .pl-title b{font:400 28px/1 var(--disp);text-transform:uppercase}
+:root[data-style=phantom] .pl-btn.play{background:var(--p-red);color:#fff;transform:skew(var(--skew))}
+:root[data-style=phantom] .toast{background:var(--p-red);color:#fff;font:900 14px var(--disp);text-transform:uppercase;transform:skew(var(--skew));box-shadow:5px 5px 0 #000}
+:root[data-style=phantom] #view>*{animation:p-in .38s cubic-bezier(.2,1.4,.4,1) both}
+:root[data-style=phantom] #view>*:nth-child(2){animation-delay:.05s}:root[data-style=phantom] #view>*:nth-child(3){animation-delay:.1s}
+@keyframes p-in{from{opacity:0;transform:translateX(-60px) skewX(-14deg)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){:root[data-style=phantom] #view>*{animation:none}}
+
+/* Light mode keeps the hero and player as dark plates so artwork and type still read */
+:root[data-style=phantom][data-theme=light] .hero,:root[data-style=phantom][data-theme=light] #player{--bg:#0a0a0a;--text:#f4f1ea;--mute:#c9c4ba;--dim:#8a847a;--line2:rgba(244,241,234,.3);--panel:#121212;color:var(--text);background:var(--bg)}
+:root[data-style=phantom] .recap-chip *,:root[data-style=phantom] .hello-stats>* *{color:inherit!important}
+
+:root[data-style=phantom]{--amber-rgb:232,20,30;--pink-rgb:232,20,30}

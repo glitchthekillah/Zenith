@@ -741,7 +741,7 @@ body.scrolling .card:hover:not(:focus-visible) .play-over{opacity:0;transition:n
 /* Quiet, persistent activity indication; no navigation or layout movement. */
 #server-loading{position:fixed;left:50%;bottom:22px;z-index:35;display:flex;align-items:center;gap:10px;padding:8px 16px 8px 10px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(18,15,26,.78);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 18px 40px -18px rgba(0,0,0,.9);color:var(--text);font:500 13px var(--disp);pointer-events:none;opacity:0;transform:translate(-50%,14px);transition:opacity .25s var(--ease),transform .25s var(--ease)}
 #server-loading.show{opacity:1;transform:translate(-50%,0)}
-#server-loading i{width:22px;height:22px;flex:none;border-radius:8px;background:conic-gradient(from 0deg,transparent 0 25%,var(--pink) 60%,var(--amber) 100%);-webkit-mask:radial-gradient(circle,transparent 5px,#000 6px);mask:radial-gradient(circle,transparent 5px,#000 6px);border-radius:50%;animation:server-turn .9s linear infinite}
+#server-loading i{width:18px;height:18px;flex:none;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 30%,var(--pink) 65%,var(--amber) 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));animation:server-turn .9s linear infinite}
 body.playing #server-loading,body.mini #server-loading{display:none}
 @keyframes server-turn{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){#server-loading i{animation:none}#server-loading{transition:none}}
@@ -1080,3 +1080,14 @@ body[data-bg=showcase] .sky i,body[data-bg=image] .sky i,body[data-bg=title] .sk
 .ls-chips i.from{color:var(--hl,#ffb547);border-color:color-mix(in srgb,var(--hl,#ffb547) 35%,transparent)}
 .ls-foot{display:flex;gap:16px;padding:8px 10px 4px;margin-top:4px;border-top:1px solid var(--line2);font-size:12px;color:var(--mute)}
 .ls-empty{padding:14px 12px;font-size:13px;color:var(--mute)}
+
+/* Style presets: chips use the preset's own accent and stay centred */
+:root[data-style] .hello-stats a{align-items:center;line-height:1}
+:root[data-style] .recap-chip{background:transparent!important;border-color:var(--amber)!important;color:var(--amber)!important}
+:root[data-style] .recap-chip .i{color:var(--amber);margin-top:-1px}
+:root[data-style=phantom] .recap-chip{background:var(--amber)!important;color:#fff!important}
+
+:root[data-style] #server-loading{border-radius:0;background:var(--panel);border-color:var(--line2);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:8px 14px 8px 12px}
+:root[data-style] #server-loading i{background:none;-webkit-mask:none;mask:none;border:2px solid rgba(var(--amber-rgb),.22);border-top-color:var(--amber);width:14px;height:14px}
+:root[data-style=marathon] #server-loading,:root[data-style=codec] #server-loading{font:500 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+:root[data-style=marathon] #server-loading i,:root[data-style=codec] #server-loading i{border-radius:0}

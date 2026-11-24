@@ -1,0 +1,89 @@
+/* ZENITH // STYLE PRESET 04 : "CODEC" — a green phosphor terminal. Monospace everything, scanlines,
+   glowing text, bracketed labels, dossier detail pages. Light mode is a printed green-bar listing. */
+:root[data-style=codec]{--c-g:#39ff88;--c-g2:#1f9e55;--c-amb:#ffcc33;
+  --bg:#020904;--text:#8dffb7;--mute:#4fbf7c;--dim:#2f7a4c;--line:rgba(57,255,136,.14);--line2:rgba(57,255,136,.38);
+  --glass:rgba(4,20,10,.92);--glass2:#062012;--blur:none;--panel:#03130a;--well:#010603;
+  --amber:var(--c-g);--gold2:var(--c-g);--pink:var(--c-amb);--hl-text:var(--c-g);--btn1:var(--c-g);--btn2:var(--c-g);--btn-ink:#021006;--grad:var(--c-g);--grad3:var(--c-g);
+  --disp:"JetBrains Mono",Consolas,monospace;--glow:0 0 6px rgba(57,255,136,.55)}
+:root[data-style=codec][data-theme=light]{--c-g:#14632f;--c-g2:#14632f;--bg:#f3f1e4;--text:#123a1f;--mute:#3c6247;--dim:#7a8f7f;--line:rgba(18,58,31,.14);--line2:rgba(18,58,31,.38);
+  --glass:#fbfaf1;--glass2:#e9f0df;--panel:#fbfaf1;--well:#e8eedc;--glow:none;color-scheme:light}
+:root[data-style=codec] *,:root[data-style=codec] *::before,:root[data-style=codec] *::after{border-radius:0!important}
+:root[data-style=codec] body{font-family:"JetBrains Mono",Consolas,monospace;font-size:13.5px;text-shadow:var(--glow)}
+:root[data-style=codec] ::selection{background:var(--c-g);color:var(--bg)}
+:root[data-style=codec] .sky{background:var(--bg)!important}
+:root[data-style=codec] .sky canvas,:root[data-style=codec] .sky i,:root[data-style=codec] .sky .sky-img{display:none!important}
+:root[data-style=codec] .sky::before{content:'';position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 40%,rgba(57,255,136,.07),transparent 70%)}
+:root[data-style=codec] .sky::after{content:'';position:fixed;inset:0;z-index:50;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);animation:c-roll 8s linear infinite}
+:root[data-style=codec][data-theme=light] .sky::before{background:repeating-linear-gradient(180deg,rgba(57,160,90,.10) 0 28px,transparent 28px 56px)}
+:root[data-style=codec][data-theme=light] .sky::after{display:none}
+@keyframes c-roll{to{background-position:0 300px}}
+:root[data-style=codec] h1,:root[data-style=codec] h2,:root[data-style=codec] .row-head h3,:root[data-style=codec] .card b,:root[data-style=codec] .brand b,:root[data-style=codec] .btn,:root[data-style=codec] .navlink{font-family:var(--disp);text-transform:uppercase}
+:root[data-style=codec] .kicker{font:500 11px/1 var(--disp)!important;letter-spacing:.16em!important;color:var(--c-g)!important;background:none}
+:root[data-style=codec] .kicker::before{content:'[ '!important;background:none!important;position:static!important;width:auto!important;height:auto!important;display:inline!important;box-shadow:none!important}
+:root[data-style=codec] .kicker::after{content:' ]'}
+:root[data-style=codec] .top{background:var(--panel);border:1px solid var(--line2);box-shadow:none;backdrop-filter:none}
+:root[data-style=codec] .brand .orb{background:var(--c-g);box-shadow:var(--glow);width:12px;height:18px;animation:c-blink 1.1s steps(1) infinite}
+@keyframes c-blink{50%{opacity:0}}
+:root[data-style=codec] .brand b::before{content:'>'}
+:root[data-style=codec] .navlink{color:var(--mute);background:none!important;letter-spacing:.08em}
+:root[data-style=codec] .navlink::before{content:'  '}
+:root[data-style=codec] .navlink.on{color:var(--bg)!important;background:var(--c-g)!important;text-shadow:none}
+:root[data-style=codec] .navlink.on .i{stroke:var(--bg)}
+:root[data-style=codec] .top .field{background:transparent;border:1px solid var(--line2)}
+:root[data-style=codec] .top .field input::placeholder{color:var(--dim);text-transform:uppercase}
+:root[data-style=codec] .me,:root[data-style=codec] .av-letter{background:var(--c-g)!important;color:var(--bg)!important;text-shadow:none}
+:root[data-style=codec] .btn{background:transparent;border:1px solid var(--c-g);color:var(--c-g);box-shadow:none;letter-spacing:.1em;font-size:12.5px}
+:root[data-style=codec] .btn::before{content:'[ '}:root[data-style=codec] .btn::after{content:' ]'}
+:root[data-style=codec] .btn:hover{background:var(--c-g);color:var(--bg);text-shadow:none}
+:root[data-style=codec] .btn.gold,:root[data-style=codec] .btn.primary{background:var(--c-g);color:var(--bg);text-shadow:none}
+:root[data-style=codec] .btn.gold:hover,:root[data-style=codec] .btn.primary:hover{background:transparent;color:var(--c-g)}
+:root[data-style=codec] .icon-btn:hover{background:var(--line);color:var(--c-g)}
+:root[data-style=codec] .chip{border:1px solid var(--line2);background:transparent;text-transform:uppercase;font-size:11.5px}
+:root[data-style=codec] .chip.on{background:var(--c-g);color:var(--bg)}
+:root[data-style=codec] .hello,:root[data-style=codec] .panel,:root[data-style=codec] .set-card,:root[data-style=codec] .srv-card,:root[data-style=codec] dialog.modal,:root[data-style=codec] .hero{background:var(--panel);border:1px solid var(--line2);box-shadow:none}
+:root[data-style=codec] .hello::before{content:'CONNECTION ESTABLISHED \00B7  FREQ 140.85';position:absolute;left:24px;top:14px;line-height:1;font-size:10px;letter-spacing:.16em;color:var(--dim)}
+:root[data-style=codec] .hello{position:relative;padding-top:38px}
+:root[data-style=codec] .hello-text h1{font-size:clamp(26px,3vw,40px);font-weight:500}
+:root[data-style=codec] .hello-text h1::after{content:'_';animation:c-blink 1s steps(1) infinite}
+:root[data-style=codec] .hello-text h1 span,:root[data-style=codec] .hello-text h1 em,:root[data-style=codec] .hello-text h1 b{color:var(--c-amb);-webkit-text-fill-color:currentColor;background:none}
+:root[data-style=codec][data-theme=light] .hello-text h1 span{color:#8a5a00}
+:root[data-style=codec] .hello-pic{border:1px solid var(--c-g);box-shadow:none;filter:grayscale(1) sepia(1) hue-rotate(70deg) saturate(3)}
+:root[data-style=codec] .recap-chip,:root[data-style=codec] .hello-stats>*,:root[data-style=codec] .hello-surprise,:root[data-style=codec] .hello-resume{border:1px solid var(--line2);background:transparent;box-shadow:none;text-transform:uppercase;font-size:11.5px}
+:root[data-style=codec] .hero .hero-art,:root[data-style=codec] .hero>img,:root[data-style=codec] .card .art img,:root[data-style=codec] .detail .backdrop img,:root[data-style=codec] .person .face img,:root[data-style=codec] .hello-resume img{filter:grayscale(1) sepia(1) hue-rotate(70deg) saturate(2.2) brightness(.85) contrast(1.15)}
+:root[data-style=codec][data-theme=light] .hero .hero-art,:root[data-style=codec][data-theme=light] .hero>img,:root[data-style=codec][data-theme=light] .card .art img,:root[data-style=codec][data-theme=light] .detail .backdrop img{filter:grayscale(1) contrast(1.1)}
+:root[data-style=codec] .card:hover .art img,:root[data-style=codec] .card:focus-visible .art img,:root[data-style=codec] .hero:hover .hero-art{filter:none}
+:root[data-style=codec] .hero::after{display:none!important}
+:root[data-style=codec] .hero .meta,:root[data-style=codec] .facts{text-transform:uppercase;font-size:11.5px;letter-spacing:.06em}
+:root[data-style=codec] .row-head h3{font-size:16px;font-weight:500;letter-spacing:.1em}
+:root[data-style=codec] .row-head h3::before{content:'// '!important;background:none!important;position:static!important;width:auto!important;height:auto!important;display:inline!important;box-shadow:none!important;color:var(--dim)}
+:root[data-style=codec] .row-head h3::after{display:none}
+:root[data-style=codec] .card .art{border:1px solid var(--line2);box-shadow:none}
+:root[data-style=codec] .card:hover .art,:root[data-style=codec] .card:focus-visible .art{border-color:var(--c-g);box-shadow:0 0 0 1px var(--c-g),0 0 18px rgba(57,255,136,.35);transform:none}
+:root[data-style=codec] .card b{font-size:12.5px;font-weight:500}
+:root[data-style=codec] .card small{font-size:11px;color:var(--dim)}
+:root[data-style=codec] .card .bar i{background:var(--c-g)!important}
+:root[data-style=codec] .card .play-over span,:root[data-style=codec] .check{background:var(--c-g)!important;color:var(--bg)!important}
+:root[data-style=codec] .detail h1{font-size:clamp(30px,4vw,56px);font-weight:500;letter-spacing:.02em}
+:root[data-style=codec] .detail h1::before{content:'FILE: ';color:var(--dim);font-size:.45em;vertical-align:middle}
+:root[data-style=codec] .detail .tagline{color:var(--c-amb);font-size:13px;text-transform:uppercase}
+:root[data-style=codec][data-theme=light] .detail .tagline{color:#8a5a00}
+:root[data-style=codec] .overview{border:1px solid var(--line2);padding:14px 16px;position:relative;background:var(--well)}
+:root[data-style=codec] .overview::before{content:'[ BRIEFING ]';display:block;font-size:10.5px;letter-spacing:.16em;color:var(--dim);margin-bottom:6px}
+:root[data-style=codec] .detail-in>.art{border:1px solid var(--c-g);box-shadow:0 0 22px rgba(57,255,136,.25)}
+:root[data-style=codec] .person .face{border:1px solid var(--line2)}
+:root[data-style=codec] .person b{font-size:11.5px;font-weight:500;text-transform:uppercase}
+:root[data-style=codec] .season.on,:root[data-style=codec] .set-tabs button.on{background:var(--c-g);color:var(--bg);text-shadow:none}
+:root[data-style=codec] .page-head h1{font-size:clamp(34px,5vw,64px);font-weight:500;background:none;-webkit-text-fill-color:currentColor}
+:root[data-style=codec] .switch span{border:1px solid var(--line2);background:transparent}:root[data-style=codec] .switch input:checked+span{background:var(--c-g)}
+:root[data-style=codec] .pl-seek .done{background:var(--c-g)!important;box-shadow:var(--glow)}
+:root[data-style=codec] .pl-title b{font:500 18px/1 var(--disp);text-transform:uppercase}
+:root[data-style=codec] .pl-btn.play{background:var(--c-g);color:var(--bg)}
+:root[data-style=codec] .toast{background:var(--panel);border:1px solid var(--c-g);color:var(--c-g);font-family:var(--disp)}
+:root[data-style=codec] #view>*{animation:c-type .5s steps(8) both}
+@keyframes c-type{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0)}}
+@media (prefers-reduced-motion:reduce){:root[data-style=codec] #view>*,:root[data-style=codec] .sky::after,:root[data-style=codec] .brand .orb,:root[data-style=codec] .hello-text h1::after{animation:none}}
+
+/* Light mode keeps the hero and player as dark plates so artwork and type still read */
+:root[data-style=codec][data-theme=light] .hero,:root[data-style=codec][data-theme=light] #player{--bg:#020904;--text:#8dffb7;--mute:#4fbf7c;--dim:#2f7a4c;--line2:rgba(57,255,136,.38);--panel:#03130a;--c-g:#39ff88;color:var(--text);background:var(--bg)}
+
+:root[data-style=codec]{--amber-rgb:57,255,136;--pink-rgb:57,255,136}

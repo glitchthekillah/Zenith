@@ -1,0 +1,327 @@
+/* ============================================================================
+   ZENITH // STYLE PRESET 02 : "MARATHON"
+   A complete visual language, not a recolour: graphic-design-as-interface.
+   Acid lime and hot pink on black (or on off-white paper in light theme),
+   brutalist display type, tiny technical labels, specimen frames with serials,
+   barcodes, registration marks, hazard stripes, and motion that snaps and
+   stutters instead of easing. Everything is scoped to [data-style=marathon].
+   ========================================================================== */
+
+:root[data-style=marathon]{
+  --m-ink:#0b0b0b;--m-paper:#e9e7df;--m-acid:#c8ff1e;--m-hot:#ff2b6e;--m-cyan:#16e6ff;--m-warn:#ffb000;
+  --m-acc:var(--m-acid);--m-acc-ink:#0b0b0b;
+  --bg:#0b0b0b;--text:#ecebe4;--mute:#9b9a91;--dim:#64635d;
+  --line:rgba(236,235,228,.13);--line2:rgba(236,235,228,.32);
+  --glass:rgba(16,16,16,.94);--glass2:#191919;--blur:none;--well:#070707;--panel:#111;
+  --disp:"Space Grotesk",Inter,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --ease:steps(4,end);
+  --cut:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+  --cut-s:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,0 100%);
+  --grid:rgba(236,235,228,.045);
+}
+:root[data-style=marathon][data-theme=light]{
+  --bg:#e9e7df;--text:#0d0d0c;--mute:#4b4a45;--dim:#7c7a72;
+  --line:rgba(13,13,12,.16);--line2:rgba(13,13,12,.42);
+  --glass:rgba(233,231,223,.96);--glass2:#dedcd3;--well:#d8d6cc;--panel:#e3e1d8;
+  --m-acc-ink:#0b0b0b;--grid:rgba(13,13,12,.06);color-scheme:light;
+}
+
+/* ---- Hard edges everywhere. Marathon has no soft corners. ---- */
+:root[data-style=marathon] *,:root[data-style=marathon] *::before,:root[data-style=marathon] *::after{border-radius:0!important}
+:root[data-style=marathon] ::selection{background:var(--m-acc);color:var(--m-acc-ink)}
+:root[data-style=marathon] :focus-visible{outline:2px solid var(--m-acc);outline-offset:2px}
+:root[data-style=marathon] body{font-family:Inter,system-ui,sans-serif;letter-spacing:-.005em}
+:root[data-style=marathon] ::-webkit-scrollbar{width:10px;height:10px}
+:root[data-style=marathon] ::-webkit-scrollbar-thumb{background:var(--line2);border:3px solid var(--bg)}
+:root[data-style=marathon] ::-webkit-scrollbar-thumb:hover{background:var(--m-acc)}
+:root[data-style=marathon] ::-webkit-scrollbar-track{background:transparent}
+
+/* ---- Background: blueprint grid, registration marks, an edge readout. The animated sky is switched off. ---- */
+:root[data-style=marathon] .sky{background:var(--bg)}
+:root[data-style=marathon] .sky canvas,:root[data-style=marathon] .sky i,:root[data-style=marathon] .sky .sky-img,:root[data-style=marathon] .sky .sky-fade{display:none!important}
+:root[data-style=marathon] .sky::before{content:'';position:absolute;inset:0;
+  background:
+    linear-gradient(var(--grid) 1px,transparent 1px) 0 0/48px 48px,
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/48px 48px,
+    linear-gradient(rgba(127,127,127,.05) 1px,transparent 1px) 0 0/8px 8px}
+:root[data-style=marathon] .sky::after{content:'';position:absolute;inset:18px;
+  background:
+    /* registration crosshairs in all four corners */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' fill='none' stroke='%23888' stroke-width='1'%3E%3Ccircle cx='13' cy='13' r='7'/%3E%3Cpath d='M13 0v26M0 13h26'/%3E%3C/svg%3E") 0 0/26px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' fill='none' stroke='%23888' stroke-width='1'%3E%3Ccircle cx='13' cy='13' r='7'/%3E%3Cpath d='M13 0v26M0 13h26'/%3E%3C/svg%3E") 100% 0/26px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' fill='none' stroke='%23888' stroke-width='1'%3E%3Ccircle cx='13' cy='13' r='7'/%3E%3Cpath d='M13 0v26M0 13h26'/%3E%3C/svg%3E") 0 100%/26px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' fill='none' stroke='%23888' stroke-width='1'%3E%3Ccircle cx='13' cy='13' r='7'/%3E%3Cpath d='M13 0v26M0 13h26'/%3E%3C/svg%3E") 100% 100%/26px no-repeat;
+  opacity:.55}
+/* edge readout: barcode and a vertical spec line on the right margin */
+:root[data-style=marathon] body::after{content:'ZNTH//SYS.02 — MEDIA TERMINAL — LOCAL NODE — DIRECT PLAY ONLY — UNIT 0451';position:fixed;right:4px;top:50%;
+  transform:translateY(-50%) rotate(180deg);writing-mode:vertical-rl;font:500 9px/1 var(--mono);letter-spacing:.28em;color:var(--dim);pointer-events:none;z-index:0;opacity:.8}
+:root[data-style=marathon] body::before{content:'';position:fixed;left:6px;bottom:24px;width:10px;height:140px;pointer-events:none;z-index:0;opacity:.6;
+  background:repeating-linear-gradient(180deg,var(--text) 0 2px,transparent 2px 4px,var(--text) 4px 5px,transparent 5px 9px,var(--text) 9px 12px,transparent 12px 14px)}
+
+/* ---- Shared type: technical labels ---- */
+:root[data-style=marathon] .kicker,:root[data-style=marathon] .hello-text .kicker{font:600 10.5px/1 var(--mono)!important;letter-spacing:.18em!important;text-transform:uppercase;color:var(--m-acc-ink)!important;
+  background:var(--m-acc);display:inline-block;padding:5px 8px 4px;margin-bottom:12px}
+:root[data-style=marathon] .kicker::before{content:'▲ '}
+:root[data-style=marathon] h1,:root[data-style=marathon] h2,:root[data-style=marathon] .row-head h3{font-family:var(--disp);text-transform:uppercase;letter-spacing:-.035em}
+
+/* ---- Buttons ---- */
+:root[data-style=marathon] .btn{font:600 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;background:transparent;border:1px solid var(--line2);color:var(--text);
+  box-shadow:none;transition:none;clip-path:var(--cut-s)}
+:root[data-style=marathon] .btn:hover{background:var(--text);color:var(--bg);border-color:var(--text);transform:none}
+:root[data-style=marathon] .btn .i{stroke-width:2.4}
+:root[data-style=marathon] .btn.gold,:root[data-style=marathon] .btn.primary{background:var(--m-acc);color:var(--m-acc-ink);border-color:var(--m-acc);box-shadow:none;clip-path:var(--cut)}
+:root[data-style=marathon] .btn.gold:hover,:root[data-style=marathon] .btn.primary:hover{background:var(--m-hot);border-color:var(--m-hot);color:#fff;animation:m-jit .18s steps(2) 1}
+:root[data-style=marathon] .btn.big{height:52px;padding:0 26px;font-size:13px}
+:root[data-style=marathon] .icon-btn{border:1px solid transparent}
+:root[data-style=marathon] .icon-btn:hover{background:transparent;border-color:var(--m-acc);color:var(--m-acc)}
+:root[data-style=marathon][data-theme=light] .icon-btn:hover{color:var(--text)}
+:root[data-style=marathon] .chip{font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line2);background:transparent}
+:root[data-style=marathon] .chip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+
+/* ---- Top bar: a black control strip with a serial-numbered logotype ---- */
+:root[data-style=marathon] .top{background:var(--panel);border:1px solid var(--line2);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+:root[data-style=marathon] .top::after{content:'';position:absolute;left:0;right:0;bottom:-5px;height:4px;
+  background:repeating-linear-gradient(-45deg,var(--m-acc) 0 6px,transparent 6px 12px);opacity:.9}
+:root[data-style=marathon] .brand .orb{background:var(--m-acc);box-shadow:none;width:22px;height:22px;clip-path:polygon(0 0,100% 0,100% 62%,62% 100%,0 100%);animation:none}
+:root[data-style=marathon] .brand b{font:700 17px/1 var(--disp);text-transform:uppercase;letter-spacing:-.02em}
+:root[data-style=marathon] .brand b::after{content:'//02';font:500 9px/1 var(--mono);letter-spacing:.1em;color:var(--dim);margin-left:6px;vertical-align:super}
+:root[data-style=marathon] .navlink{font:600 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);border:1px solid transparent;background:none!important}
+:root[data-style=marathon] .navlink:hover{color:var(--text);border-color:var(--line2)}
+:root[data-style=marathon] .navlink.on{background:var(--m-acc)!important;color:var(--m-acc-ink)!important;clip-path:var(--cut-s)}
+:root[data-style=marathon] .navlink.on .i{stroke:var(--m-acc-ink);color:var(--m-acc-ink)}
+:root[data-style=marathon] .top .field{background:transparent;border:0;border-bottom:1px solid var(--line2)}
+:root[data-style=marathon] .top .field:focus-within{border-bottom-color:var(--m-acc);box-shadow:none}
+:root[data-style=marathon] .top .field input{font:500 12px var(--mono);letter-spacing:.06em}
+:root[data-style=marathon] .top .field input::placeholder{text-transform:uppercase;letter-spacing:.14em;color:var(--dim)}
+:root[data-style=marathon] .me,:root[data-style=marathon] .av-letter{background:var(--m-hot)!important;color:#fff;font-family:var(--mono)}
+
+/* ---- Hello block: an operator ID card ---- */
+:root[data-style=marathon] .hello{background:var(--panel);border:1px solid var(--line2);box-shadow:none;position:relative;overflow:hidden}
+:root[data-style=marathon] .hello::before{content:'OPERATOR // SESSION ACTIVE';position:absolute;right:18px;top:12px;font:500 9.5px/1 var(--mono);letter-spacing:.2em;color:var(--dim)}
+:root[data-style=marathon] .hello-pic{border:2px solid var(--m-acc);box-shadow:none;background:var(--bg)}
+:root[data-style=marathon] .hello-text h1{font-size:clamp(30px,3.4vw,48px);font-weight:700;line-height:.95}
+:root[data-style=marathon] .hello-text h1 span,:root[data-style=marathon] .hello-text h1 em,:root[data-style=marathon] .hello-text h1 b{color:var(--m-acc);-webkit-text-fill-color:currentColor;background:none}
+:root[data-style=marathon][data-theme=light] .hello-text h1 span,:root[data-style=marathon][data-theme=light] .hello-text h1 em{background:var(--m-acc);color:var(--m-ink);padding:0 .12em}
+:root[data-style=marathon] .recap-chip,:root[data-style=marathon] .hello-stats>*{font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line2);background:transparent;box-shadow:none}
+:root[data-style=marathon] .hello-resume{border:1px solid var(--m-hot);background:transparent;box-shadow:none}
+:root[data-style=marathon] .hello-resume .hr-play .i{background:var(--m-hot);color:#fff}
+:root[data-style=marathon] .hello-surprise{border:1px dashed var(--line2);background:transparent;font:600 11px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+
+/* ---- Hero: a scanned specimen plate ---- */
+:root[data-style=marathon] .hero{border:1px solid var(--line2);background:var(--panel);box-shadow:none}
+:root[data-style=marathon] .hero .hero-art,:root[data-style=marathon] .hero>img{filter:grayscale(.85) contrast(1.25) brightness(.92)}
+:root[data-style=marathon] .hero:hover .hero-art,:root[data-style=marathon] .hero:hover>img{filter:none;transition:filter .5s steps(5)}
+:root[data-style=marathon] .hero::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+:root[data-style=marathon] .hero-in::after{content:'SPEC/PLATE · FEATURED TITLE · ARCHIVE COPY';display:block;margin-top:14px;font:500 9.5px/1.4 var(--mono);letter-spacing:.2em;color:var(--dim)}
+:root[data-style=marathon] .hero .meta{font:500 11.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+:root[data-style=marathon] .hero .meta .rated{border:1px solid var(--line2)}
+:root[data-style=marathon] .hero .meta .star{color:var(--m-acc)}
+:root[data-style=marathon] .hero p{max-width:46ch}
+:root[data-style=marathon] .hero .hero-logo{filter:drop-shadow(4px 4px 0 var(--m-hot))}
+:root[data-style=marathon] .hero-fav{border:1px solid var(--line2)}
+/* hazard band on the hero's bottom edge */
+:root[data-style=marathon] .hero::after{content:''!important;position:absolute!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;height:10px!important;z-index:3;
+  background:repeating-linear-gradient(-45deg,var(--m-acc) 0 10px,var(--m-ink) 10px 20px)!important;opacity:1!important}
+:root[data-style=marathon] .pdots i,:root[data-style=marathon] .hero-dots button{background:var(--line2);width:18px;height:4px}
+:root[data-style=marathon] .pdots i.on,:root[data-style=marathon] .hero-dots button.on{background:var(--m-acc);width:34px}
+
+/* ---- Rows: indexed sections ---- */
+:root[data-style=marathon] #view{counter-reset:m-row}
+:root[data-style=marathon] .row{counter-increment:m-row}
+:root[data-style=marathon] .row-head h3{font-size:22px;font-weight:700;display:flex;align-items:baseline;gap:12px}
+:root[data-style=marathon] .row-head h3::before{content:counter(m-row,decimal-leading-zero);font:600 11px/1 var(--mono);letter-spacing:.1em;
+  color:var(--m-acc-ink);background:var(--m-acc);padding:4px 6px;position:static;width:auto;height:auto;transform:translateY(-3px);box-shadow:none}
+:root[data-style=marathon] .row-head h3::after{content:'';flex:1;align-self:center;height:1px;min-width:40px;background:linear-gradient(90deg,var(--line2),transparent);position:static;width:auto}
+:root[data-style=marathon] .row-head{border-bottom:0}
+:root[data-style=marathon] .row-head a,:root[data-style=marathon] .row-head button{font:600 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+:root[data-style=marathon] .row-head a:hover{color:var(--m-acc)}
+:root[data-style=marathon] .arrow{background:var(--m-acc);color:var(--m-acc-ink);border:0;box-shadow:none}
+
+/* ---- Cards: specimen frames with serial numbers and a barcode ---- */
+:root[data-style=marathon] .strip,:root[data-style=marathon] .grid{counter-reset:m-spec}
+:root[data-style=marathon] .card{counter-increment:m-spec}
+:root[data-style=marathon] .card .art{border:1px solid var(--line2);box-shadow:none;background:var(--well);transition:none;position:relative}
+:root[data-style=marathon] .card .art img{filter:grayscale(.55) contrast(1.15);transition:none}
+:root[data-style=marathon] .card .art::before{content:'Nº' counter(m-spec,decimal-leading-zero);position:absolute;left:0;top:0;z-index:3;
+  font:600 9.5px/1 var(--mono);letter-spacing:.08em;color:var(--m-acc-ink);background:var(--m-acc);padding:4px 5px 3px;pointer-events:none}
+:root[data-style=marathon] .card .art::after{content:'';position:absolute;right:6px;bottom:8px;width:34px;height:12px;z-index:3;pointer-events:none;opacity:.85;
+  background:repeating-linear-gradient(90deg,#fff 0 1px,transparent 1px 3px,#fff 3px 5px,transparent 5px 6px,#fff 6px 7px,transparent 7px 10px);mix-blend-mode:difference}
+:root[data-style=marathon] .card:hover .art,:root[data-style=marathon] .card:focus-visible .art{transform:translate(-3px,-3px);box-shadow:6px 6px 0 var(--m-acc);border-color:var(--m-acc);outline:0}
+:root[data-style=marathon] .card:hover .art img,:root[data-style=marathon] .card:focus-visible .art img{filter:none;animation:m-glitch .32s steps(2) 1}
+:root[data-style=marathon] .card b{font:700 13.5px/1.25 var(--disp);text-transform:uppercase;letter-spacing:-.01em}
+:root[data-style=marathon] .card small{font:500 10.5px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+:root[data-style=marathon] .card .bar{height:4px;background:rgba(255,255,255,.18)}
+:root[data-style=marathon] .card .bar i{background:var(--m-hot)!important}
+:root[data-style=marathon] .card .play-over span{background:var(--m-acc);color:var(--m-acc-ink);box-shadow:none;clip-path:var(--cut-s)}
+:root[data-style=marathon] .card .check,:root[data-style=marathon] .check{background:var(--m-acc)!important;color:var(--m-acc-ink)!important;box-shadow:none}
+:root[data-style=marathon] .badge{font:600 9.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;background:var(--m-ink);color:var(--m-acc);border:1px solid var(--m-acc);box-shadow:none}
+/* library tiles */
+:root[data-style=marathon] .libtile{border:1px solid var(--line2);box-shadow:none}
+:root[data-style=marathon] .libtile .lt-text b{font-family:var(--disp);text-transform:uppercase;letter-spacing:-.03em}
+:root[data-style=marathon] .libtile:hover{border-color:var(--m-acc);box-shadow:6px 6px 0 var(--m-acc);transform:translate(-3px,-3px)}
+
+/* ---- Detail page: a dossier ---- */
+:root[data-style=marathon] .detail .backdrop img{filter:grayscale(1) contrast(1.3) brightness(.55)}
+:root[data-style=marathon] .detail .backdrop::after{background:linear-gradient(90deg,var(--bg) 18%,transparent 70%),linear-gradient(0deg,var(--bg),transparent 50%),
+  repeating-linear-gradient(0deg,rgba(0,0,0,.25) 0 1px,transparent 1px 3px)!important}
+:root[data-style=marathon] .detail h1{font-size:clamp(38px,5.2vw,76px);line-height:.9;font-weight:700}
+:root[data-style=marathon] .detail .tagline{font:500 12px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--m-acc)}
+:root[data-style=marathon][data-theme=light] .detail .tagline{color:var(--text);background:var(--m-acc);display:inline-block;padding:3px 6px}
+:root[data-style=marathon] .facts{font:500 11.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+:root[data-style=marathon] .facts .pill{border:1px solid var(--line2);background:transparent}
+:root[data-style=marathon] .facts .ends{color:var(--m-hot)}
+:root[data-style=marathon] .detail-in>.art{border:1px solid var(--line2);box-shadow:10px 10px 0 var(--m-acc)}
+:root[data-style=marathon] .overview{font-size:14.5px;border-left:2px solid var(--m-acc);padding-left:16px}
+:root[data-style=marathon] .pp{font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line2);background:transparent}
+:root[data-style=marathon] .person .face{border:1px solid var(--line2);background:var(--well)}
+:root[data-style=marathon] .person .face img{filter:grayscale(1) contrast(1.2)}
+:root[data-style=marathon] .person:hover .face{border-color:var(--m-acc)}
+:root[data-style=marathon] .person:hover .face img{filter:none}
+:root[data-style=marathon] .person b{font:700 12px/1.25 var(--disp);text-transform:uppercase}
+:root[data-style=marathon] .person small{font:500 10px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase}
+:root[data-style=marathon] .season{font:600 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line2);background:transparent}
+:root[data-style=marathon] .season.on{background:var(--m-acc);color:var(--m-acc-ink);border-color:var(--m-acc)}
+:root[data-style=marathon] .ep{border-bottom:1px solid var(--line)}
+:root[data-style=marathon] .ep h4{font:700 14px/1.2 var(--disp);text-transform:uppercase}
+:root[data-style=marathon] .ep .art .num{font-family:var(--mono);background:var(--m-acc);color:var(--m-acc-ink)}
+
+/* ---- Pages and panels ---- */
+:root[data-style=marathon] .page-head h1{font-size:clamp(40px,5.5vw,84px);line-height:.88;font-weight:700}
+:root[data-style=marathon] .panel,:root[data-style=marathon] .set-card,:root[data-style=marathon] .srv-card,:root[data-style=marathon] dialog.modal,:root[data-style=marathon] .glass{
+  background:var(--panel);border:1px solid var(--line2);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+:root[data-style=marathon] .set-tabs button{font:600 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;border:1px solid transparent}
+:root[data-style=marathon] .set-tabs button.on{background:var(--m-acc);color:var(--m-acc-ink);border-color:var(--m-acc)}
+:root[data-style=marathon] .set-row b{font-family:var(--disp);text-transform:uppercase;letter-spacing:-.01em}
+:root[data-style=marathon] .set-row small{font-family:Inter,sans-serif}
+:root[data-style=marathon] .switch span{background:transparent;border:1px solid var(--line2)}
+:root[data-style=marathon] .switch span::after{background:var(--mute);box-shadow:none}
+:root[data-style=marathon] .switch input:checked+span{background:var(--m-acc);border-color:var(--m-acc)}
+:root[data-style=marathon] .switch input:checked+span::after{background:var(--m-ink)}
+:root[data-style=marathon] input[type=range]{accent-color:var(--m-acc)}
+:root[data-style=marathon] .inp,:root[data-style=marathon] .field,:root[data-style=marathon] select,:root[data-style=marathon] input[type=text]{background:var(--well);border:1px solid var(--line2);box-shadow:none}
+:root[data-style=marathon] .toast{background:var(--m-ink);color:var(--m-paper);border:1px solid var(--m-acc);font:500 12px var(--mono);letter-spacing:.04em;box-shadow:6px 6px 0 var(--m-acc)}
+
+/* ---- Player: a data readout ---- */
+:root[data-style=marathon] .pl-title b{font:700 22px/1 var(--disp);text-transform:uppercase;letter-spacing:-.02em}
+:root[data-style=marathon] .pl-title small,:root[data-style=marathon] .pl-time{font:500 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+:root[data-style=marathon] .pl-seek .track{height:8px;background:rgba(255,255,255,.14);
+  -webkit-mask:repeating-linear-gradient(90deg,#000 0 6px,transparent 6px 8px);mask:repeating-linear-gradient(90deg,#000 0 6px,transparent 6px 8px)}
+:root[data-style=marathon] .pl-seek .done{background:var(--m-acc)!important}
+:root[data-style=marathon] .pl-seek .buf{background:rgba(255,255,255,.3)}
+:root[data-style=marathon] .pl-seek .knob{width:4px;height:22px;background:var(--m-hot);box-shadow:none;border:0}
+:root[data-style=marathon] .pl-btn{border:1px solid transparent}
+:root[data-style=marathon] .pl-btn:hover{border-color:var(--m-acc);color:var(--m-acc);background:transparent}
+:root[data-style=marathon] .pl-btn.play{background:var(--m-acc);color:var(--m-ink);clip-path:var(--cut-s)}
+:root[data-style=marathon] .pl-menu,:root[data-style=marathon] .pl-next,:root[data-style=marathon] .pl-skip{background:var(--m-ink);border:1px solid var(--m-acc);backdrop-filter:none;box-shadow:6px 6px 0 rgba(200,255,30,.35)}
+:root[data-style=marathon] .pl-menu h4{font:600 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--m-acc)}
+:root[data-style=marathon] .pl-resume{background:var(--m-acc);color:var(--m-ink);font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em}
+
+/* ---- Motion: things snap in with a few glitch frames instead of fading ---- */
+:root[data-style=marathon] #view>*{animation:m-enter .34s steps(1) both}
+:root[data-style=marathon] #view>*:nth-child(2){animation-delay:.04s}
+:root[data-style=marathon] #view>*:nth-child(3){animation-delay:.08s}
+:root[data-style=marathon] #view>*:nth-child(4){animation-delay:.12s}
+@keyframes m-enter{
+  0%{opacity:0;clip-path:inset(0 0 100% 0)}
+  20%{opacity:1;clip-path:inset(0 0 62% 0);transform:translateX(-6px)}
+  40%{clip-path:inset(30% 0 22% 0);transform:translateX(5px);filter:hue-rotate(80deg)}
+  60%{clip-path:inset(0 0 8% 0);transform:translateX(-2px);filter:none}
+  100%{opacity:1;clip-path:inset(0);transform:none}}
+@keyframes m-glitch{
+  0%{transform:translate(0);filter:none}
+  25%{transform:translate(-3px,1px);filter:saturate(3) hue-rotate(-40deg)}
+  50%{transform:translate(3px,-1px);clip-path:inset(10% 0 40% 0)}
+  75%{transform:translate(-1px,0);clip-path:inset(55% 0 5% 0)}
+  100%{transform:none;clip-path:none;filter:none}}
+@keyframes m-jit{0%{transform:translate(2px,-1px)}50%{transform:translate(-2px,1px)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){
+  :root[data-style=marathon] #view>*,:root[data-style=marathon] .card:hover .art img,:root[data-style=marathon] .btn:hover{animation:none!important}}
+
+/* Light theme: paper everywhere, but the hero and player stay black "plates" so artwork and white type still read. */
+:root[data-style=marathon][data-theme=light] .hero,:root[data-style=marathon][data-theme=light] #player{
+  --bg:#0b0b0b;--text:#ecebe4;--mute:#a3a29a;--dim:#6c6b65;--line:rgba(236,235,228,.13);--line2:rgba(236,235,228,.32);--panel:#111;--well:#070707;color:var(--text);background:#0b0b0b}
+:root[data-style=marathon] .av-letter{color:#fff!important}
+/* Highlight text (kickers, "continue watching" labels) follows the preset, not the Zenith accent */
+:root[data-style=marathon]{--amber:var(--m-acc);--gold2:var(--m-acc);--pink:var(--m-hot);--hl-text:var(--m-acc);--btn1:var(--m-acc);--btn2:var(--m-acc);--btn-ink:#0b0b0b;--grad:var(--m-acc);--grad3:var(--m-acc)}
+:root[data-style=marathon][data-theme=light]{--hl-text:#0b0b0b}
+:root[data-style=marathon] .sky{background:var(--bg)!important}
+:root[data-style=marathon] .kicker::before{background:none!important;width:auto!important;height:auto!important;position:static!important;box-shadow:none!important;display:inline!important;border:0!important}
+:root[data-style=marathon] .page-head h1{background:none;-webkit-text-fill-color:currentColor;color:var(--text)}
+:root[data-style=marathon][data-theme=light]{--amber:#4d6b00;--gold2:#4d6b00}
+
+/* Switching style: one hard glitch over the whole window */
+:root.style-swap #app{animation:m-swap .5s steps(1) 1}
+@keyframes m-swap{0%{filter:invert(1);clip-path:inset(0 0 70% 0)}15%{filter:none;clip-path:inset(30% 0 20% 0);transform:translateX(-8px)}
+  30%{clip-path:inset(0 0 40% 0);transform:translateX(6px);filter:hue-rotate(90deg)}45%{clip-path:none;transform:none;filter:none}100%{}}
+@media (prefers-reduced-motion:reduce){:root.style-swap #app{animation:none}}
+
+/* ---- Settings: the style gallery (shown in every style) ---- */
+.style-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;padding:4px 0 6px}
+.style-card{display:flex;flex-direction:column;gap:10px;padding:10px;border:1px solid var(--line);border-radius:16px;background:var(--glass);text-align:left;transition:border-color .2s,transform .2s var(--ease)}
+.style-card:hover{border-color:var(--line2);transform:translateY(-2px)}
+.style-card.on{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber) inset}
+.style-card .sc-txt b{display:block;font:600 15px/1.2 var(--disp)}
+.style-card .sc-txt small{display:block;color:var(--mute);font-size:12.5px;margin-top:2px}
+.sc-prev{position:relative;display:block;height:118px;border-radius:10px;overflow:hidden}
+/* Zenith preview: sky blobs, glass bar, gradient button */
+.sc-zenith{background:radial-gradient(60% 70% at 20% 10%,#ff9a3c88,transparent 70%),radial-gradient(60% 70% at 85% 20%,#7a4dffaa,transparent 70%),radial-gradient(70% 60% at 70% 110%,#ff4f8b77,transparent 70%),#0b0a12}
+.sc-zenith i:nth-child(1){position:absolute;left:10px;right:10px;top:10px;height:16px;border-radius:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14)}
+.sc-zenith i:nth-child(2){position:absolute;left:10px;top:36px;width:44%;height:46px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1)}
+.sc-zenith i:nth-child(3){position:absolute;right:10px;top:36px;width:42%;height:70px;border-radius:10px;background:linear-gradient(135deg,#3a2a55,#1b1626)}
+.sc-zenith b{position:absolute;left:10px;bottom:12px;width:58px;height:18px;border-radius:9px;background:linear-gradient(135deg,#ffb547,#ff6fa5)}
+/* Marathon preview: black plate, acid tags, hazard band, barcode */
+.sc-marathon{background:linear-gradient(rgba(236,235,228,.06) 1px,transparent 1px) 0 0/14px 14px,linear-gradient(90deg,rgba(236,235,228,.06) 1px,transparent 1px) 0 0/14px 14px,#0b0b0b;border-radius:0!important}
+.sc-marathon i:nth-child(1){position:absolute;left:10px;right:10px;top:10px;height:16px;border:1px solid rgba(236,235,228,.35);background:#111}
+.sc-marathon i:nth-child(1)::after{content:'';position:absolute;left:0;right:0;bottom:-5px;height:3px;background:repeating-linear-gradient(-45deg,#c8ff1e 0 4px,transparent 4px 8px)}
+.sc-marathon i:nth-child(2){position:absolute;left:10px;top:38px;font:700 15px/1 "Space Grotesk",sans-serif;color:#ecebe4;letter-spacing:-.03em}
+.sc-marathon i:nth-child(2)::before{content:'MARATHON';display:block}
+.sc-marathon i:nth-child(2)::after{content:'▲ STYLE 02';display:inline-block;margin-top:6px;padding:2px 4px;font:600 8px/1 "JetBrains Mono",monospace;letter-spacing:.14em;background:#c8ff1e;color:#0b0b0b}
+.sc-marathon i:nth-child(3){position:absolute;right:10px;top:36px;width:38%;height:62px;border:1px solid #c8ff1e;box-shadow:4px 4px 0 #c8ff1e;background:linear-gradient(135deg,#333,#111)}
+.sc-marathon b{position:absolute;left:10px;bottom:10px;width:64px;height:20px;background:#c8ff1e;clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))}
+.sc-marathon::after{content:'';position:absolute;right:12px;bottom:12px;width:40px;height:12px;background:repeating-linear-gradient(90deg,#ecebe4 0 1px,transparent 1px 3px,#ecebe4 3px 5px,transparent 5px 6px)}
+:root[data-style=marathon] .style-card{background:var(--panel);border:1px solid var(--line2);transition:none}
+:root[data-style=marathon] .style-card:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--m-acc)}
+:root[data-style=marathon] .style-card.on{border-color:var(--m-acc);box-shadow:6px 6px 0 var(--m-acc)}
+:root[data-style=marathon] .style-card .sc-txt b{text-transform:uppercase}
+.m-accents{display:flex;flex-wrap:wrap;gap:8px}
+.m-accent{display:flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--line2);background:transparent;font:600 10.5px/1 var(--mono,monospace);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.m-accent i{width:12px;height:12px;display:block}
+.m-accent.on{border-color:var(--text);color:var(--text);box-shadow:3px 3px 0 var(--m-acc)}
+:root[data-style=marathon] .set-group>h3{font:600 10.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--m-acc)}
+:root[data-style=marathon][data-theme=light] .set-group>h3{color:var(--text)}
+
+/* Dark mode stays dark: no off-white fills. Hovers and selections use the accent or an outline instead.
+   (Light mode keeps its ink-on-paper inversions, so the two read as distinct styles.) */
+:root[data-style=marathon]:not([data-theme=light]) .btn:hover{background:transparent;color:var(--m-acc);border-color:var(--m-acc)}
+:root[data-style=marathon]:not([data-theme=light]) .chip.on{background:transparent;color:var(--m-acc);border-color:var(--m-acc)}
+:root[data-style=marathon]:not([data-theme=light]) .m-accent.on{border-color:var(--m-acc);color:var(--m-acc)}
+:root[data-style=marathon]:not([data-theme=light]) .card .art::after{opacity:.45}
+:root[data-style=marathon]:not([data-theme=light]) body::before{opacity:.3}
+:root[data-style=marathon]:not([data-theme=light]){--text:#d9d8d0;--line2:rgba(217,216,208,.24)}
+:root[data-style=marathon][data-theme=light] .toast{background:var(--m-paper);color:var(--m-ink)}
+/* Gallery previews for the other presets */
+.sc-phantom{background:repeating-conic-gradient(from 0deg at 85% 0%,rgba(232,20,30,.25) 0 5deg,transparent 5deg 15deg),#0a0a0a}
+.sc-phantom i:nth-child(1){position:absolute;left:6px;right:6px;top:10px;height:16px;background:#000;border-bottom:3px solid #e8141e;transform:skew(-8deg)}
+.sc-phantom i:nth-child(2){position:absolute;left:12px;top:38px;padding:3px 8px;background:#f4f1ea;color:#0a0a0a;font:400 14px/1 Impact,"Arial Narrow",sans-serif;transform:skew(-8deg) rotate(-3deg)}
+.sc-phantom i:nth-child(2)::before{content:'PHANTOM'}
+.sc-phantom i:nth-child(3){position:absolute;right:14px;top:36px;width:36%;height:62px;border:3px solid #f4f1ea;box-shadow:6px 6px 0 #e8141e;background:#222;transform:rotate(-4deg)}
+.sc-phantom b{position:absolute;left:12px;bottom:12px;width:62px;height:20px;background:#e8141e;box-shadow:4px 4px 0 #f4f1ea;transform:skew(-8deg)}
+.sc-codec{background:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0 1px,transparent 1px 3px),radial-gradient(120% 90% at 50% 40%,#08361b,#020904)}
+.sc-codec i:nth-child(1){position:absolute;left:10px;right:10px;top:10px;height:16px;border:1px solid rgba(57,255,136,.5)}
+.sc-codec i:nth-child(2){position:absolute;left:10px;top:38px;font:500 12px/1.5 "JetBrains Mono",monospace;color:#8dffb7;text-shadow:0 0 6px rgba(57,255,136,.6)}
+.sc-codec i:nth-child(2)::before{content:'>CODEC_';display:block}
+.sc-codec i:nth-child(2)::after{content:'[ FREQ 140.85 ]';font-size:9px;color:#4fbf7c}
+.sc-codec i:nth-child(3){position:absolute;right:10px;top:36px;width:38%;height:62px;border:1px solid #39ff88;box-shadow:0 0 14px rgba(57,255,136,.4);background:linear-gradient(#0a3a1c,#03130a)}
+.sc-codec b{position:absolute;left:10px;bottom:12px;width:70px;height:18px;background:#39ff88}
+.sc-atelier{background:#f5f0e6}
+.sc-atelier i:nth-child(1){position:absolute;left:12px;right:12px;top:22px;height:1px;background:rgba(29,26,22,.35)}
+.sc-atelier i:nth-child(2){position:absolute;left:12px;top:32px;font:italic 400 20px/1.1 "Iowan Old Style","Palatino Linotype",Georgia,serif;color:#1d1a16}
+.sc-atelier i:nth-child(2)::before{content:'Atelier'}
+.sc-atelier i:nth-child(2)::after{content:'I. Featured';display:block;font:normal 400 10px Georgia,serif;color:#9b2335;margin-top:4px}
+.sc-atelier i:nth-child(3){position:absolute;right:14px;top:32px;width:32%;height:66px;background:#faf6ee;border:1px solid rgba(29,26,22,.2);box-shadow:inset 0 0 0 5px #faf6ee,inset 0 0 0 40px #c9bda6}
+.sc-atelier b{position:absolute;left:12px;bottom:14px;width:58px;height:18px;background:#1d1a16}
+
+:root[data-style=marathon]{--amber-rgb:var(--m-acc-rgb,200,255,30);--pink-rgb:var(--m-acc-rgb,200,255,30)}
+:root[data-style=marathon][data-theme=light]{--amber-rgb:77,107,0;--pink-rgb:77,107,0}
